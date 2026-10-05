@@ -1,0 +1,68 @@
+# Jaeger v2 (2.20.0) -- the DEV trace backend behind the OpenTelemetry Collector.
+#
+# One file for both deployments: infra/docker-compose.yml mounts it into the
+# `jaeger` service and infra/kubernetes/apply-observability.sh turns it into
+# the `andyur-jaeger-config` ConfigMap. Jaeger v2 is a single binary built on
+# the Collector framework, so this is collector-style configuration: OTLP in
+# on 4317/4318, the query HTTP API and UI on 16686, health on 13133.
+#
+# Storage is IN-MEMORY and bounded (max_traces). That is a development
+# backend: traces do not survive a restart and the bound evicts the oldest.
+# Production points the Collector's `otlp_http/backend` exporter
+# (infra/observability/otel-collector.yaml) at a durable backend instead;
+# the platform itself never changes -- that exporter block is the one seam.
+#
+# The receiver is UNAUTHENTICATED. In Kubernetes only the Collector may reach
+# 4318 and only the operator may reach 16686 (infra/kubernetes/observability.yaml
+# NetworkPolicies); locally the ports bind 127.0.0.1 only.
+service:
+  extensions: [jaeger_storage, jaeger_query, healthcheckv2]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger_storage_exporter]
+  telemetry:
+    resource:
+      service.name: andyur-jaeger
+    logs:
+      level: info
+    metrics:
+      level: normal
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+
+extensions:
+  healthcheckv2:
+    use_v2: true
+    http:
+      endpoint: 0.0.0.0:13133
+  jaeger_query:
+    storage:
+      traces: andyur
+  jaeger_storage:
+    backends:
+      andyur:
+        memory:
+          max_traces: 20000
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    send_batch_size: 512
+    timeout: 2s
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: andyur

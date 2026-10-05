@@ -1,0 +1,6 @@
+# The LangGraph agent's OWN dependency tree — note what is absent: andyur.
+# Pinned loosely for the conformance demo; a real deployment would pin exactly.
+langgraph>=0.2
+langchain-openai>=0.2
+langchain-mcp-adapters>=0.1
+httpx>=0.27

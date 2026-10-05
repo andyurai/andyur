@@ -1,0 +1,81 @@
+{
+  "authlib_load": {
+    "elapsed_s": 0.6149,
+    "errors": {},
+    "invalid_requests": 0,
+    "p50_ms": 331.6,
+    "p95_ms": 608.4,
+    "server_issued": 80,
+    "server_max_active": 8,
+    "server_started": 80,
+    "throughput_rps": 130.1
+  },
+  "authlib_redirect": {
+    "methods": {
+      "POST": 1
+    },
+    "outcome": "JSONDecodeError",
+    "started": 1
+  },
+  "configuration": {
+    "concurrency": 8,
+    "operations": 80
+  },
+  "environment": {
+    "authlib": "1.7.2",
+    "httpx": "0.28.1",
+    "platform": "macOS-14.8.3-arm64-arm-64bit",
+    "python": "3.12.3",
+    "requests": "2.34.2",
+    "requests_oauth2client": "1.8.0"
+  },
+  "failures": [],
+  "passed": true,
+  "request_shape": {
+    "authlib_invalid": 0,
+    "client_auth": "HTTP Basic client:secret (secret not recorded on wire)",
+    "expected": {
+      "actor_token": [
+        "actor"
+      ],
+      "actor_token_type": [
+        "urn:ietf:params:oauth:token-type:jwt"
+      ],
+      "audience": [
+        "observability-api"
+      ],
+      "grant_type": [
+        "urn:ietf:params:oauth:grant-type:token-exchange"
+      ],
+      "scope": [
+        "telemetry:read"
+      ],
+      "subject_token": [
+        "subject"
+      ],
+      "subject_token_type": [
+        "urn:ietf:params:oauth:token-type:access_token"
+      ]
+    },
+    "requests_invalid": 0
+  },
+  "requests_load": {
+    "elapsed_s": 0.6229,
+    "errors": {},
+    "invalid_requests": 0,
+    "p50_ms": 326.8,
+    "p95_ms": 611.5,
+    "server_issued": 80,
+    "server_max_active": 8,
+    "server_started": 80,
+    "throughput_rps": 128.4
+  },
+  "requests_redirect": {
+    "methods": {
+      "POST": 1
+    },
+    "outcome": "InvalidTokenResponse",
+    "started": 1
+  },
+  "schema": "andyur-oauth-client-bakeoff/v1"
+}

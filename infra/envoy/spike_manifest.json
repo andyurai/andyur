@@ -1,0 +1,24 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_scout",
+  "name": "scout",
+  "instructions": "Spike probe agent for the composed data-plane gate.",
+  "model": null,
+  "tools": [
+    {
+      "name": "calendar",
+      "reach_url": "https://andyur-tool:8443/mcp",
+      "resource_id": "resource:calendar",
+      "authority": "managed",
+      "expected_spiffe_id": "spiffe://andyur.local/tool/calendar",
+      "mcp_tools": [
+        {"name": "read_calendar", "requires": "calendar:read"},
+        {"name": "delete_calendar", "requires": "calendar:delete"}
+      ]
+    }
+  ],
+  "ceiling": {
+    "actions": ["calendar:read", "calendar:delete"],
+    "resources": ["resource:calendar"]
+  }
+}

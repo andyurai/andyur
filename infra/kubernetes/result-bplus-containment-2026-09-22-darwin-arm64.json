@@ -1,0 +1,23 @@
+{
+  "api_server_sha256": "103ffc7eb9febafc1aefe1fff1de5832cb8bbee82c4ecc42fec9e5b74424444f",
+  "dispatch": "engine",
+  "engine_down": true,
+  "finished_at": "2026-09-22T05:38:58.757351+00:00",
+  "gate": "bplus-containment-engine-down",
+  "not_completed": true,
+  "platform": "macOS-14.8.3-arm64-arm-64bit",
+  "run_id": "3b2d9850b08a4bd2ba37579805842c7e",
+  "run_state_after": "failed",
+  "runtime_destroyed": true,
+  "seconds_halt_to_destroyed": 6,
+  "source_sha256": {
+    "andyur/daemon/daemon.py": "3f5a4faecdd0b74f1f70ff7ea4aad7e61c2245ebd109abbd96a61327e360d3a9",
+    "andyur/daemon/engine_executor.py": "b7f3749208cb68646fbf06ee997fa73c19080b8cbb6d1a43ce8b6f4bcd0ca6a7",
+    "andyur/daemon/kubernetes_controller.py": "b03dbe757e75d13c49846180178caeaeace4a71f35b551edfa54ee0c97d91b52",
+    "andyur/daemon/orchestrator.py": "143a417c7a1db7fabde2e0ebce48f905f07e1e18ff7d091e79b20b1016258c3b",
+    "andyur/server/coordinator.py": "914a6a034bb75c6c38ed37b8031d65b19779d461f5c22063bc4c6988d1c6b38e",
+    "infra/kubernetes/verify-bplus-containment.sh": "54a06c9afc81c7c363464c2bed88fb8838b1e4a10c9cdd89e748062b2c9c57da"
+  },
+  "started_at": "2026-09-22T05:37:42Z",
+  "verdict": "PASS"
+}

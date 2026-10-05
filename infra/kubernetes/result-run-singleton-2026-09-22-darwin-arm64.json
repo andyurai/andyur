@@ -1,0 +1,37 @@
+{
+  "cluster": {
+    "api_server_sha256": "103ffc7eb9febafc1aefe1fff1de5832cb8bbee82c4ecc42fec9e5b74424444f",
+    "context": "rancher-desktop",
+    "kubernetes_git_version": "v1.29.5+k3s1",
+    "namespace_uid": "7b8b1dee-27d6-49f9-a0e4-939bd54e79c1"
+  },
+  "finished_at": "2026-09-21T23:54:53.509783+00:00",
+  "generation_name_mutation_red": {
+    "lease_names": [
+      "andyur-run-58a5c3b0b100-f168dc3e",
+      "andyur-run-58a5c3b0b100-65433505"
+    ],
+    "winners": 2
+  },
+  "lease": "andyur-run-c61b4092bff96077047781f130df4376-owner",
+  "lease_duration_absent": true,
+  "namespace": "andyur-runs",
+  "platform": "macOS-14.8.3-arm64-arm-64bit",
+  "resource_version": "2014057",
+  "restored_run_scoped_winners": 1,
+  "second_claim_refused": true,
+  "source_sha256": {
+    "andyur/daemon/kubernetes_api.py": "bb72974d9f9daf825c48dfa0783f9e842f2cea042266ab9897d60fa70dfc7186",
+    "andyur/daemon/kubernetes_controller.py": "b03dbe757e75d13c49846180178caeaeace4a71f35b551edfa54ee0c97d91b52",
+    "andyur/daemon/kubernetes_manifests.py": "a811c5296bbf02caea11c12b75f0e6f2423c0e09044262ea8d3cd4d4d437b33a",
+    "infra/kubernetes/bounded_exec.py": "3e30ee8a1813ede78da739c54e76730f53c2aa2c81e17f53d726ddcc1f09cc1a",
+    "infra/kubernetes/verify-run-singleton.py": "a120c682ac089759d7901b5313655b0d1429ca03d06a38c91a6e6c8cfb3e98e8",
+    "infra/kubernetes/verify-run-singleton.sh": "41d999f1edfa0c76e38e6357c8750b632fde815e24b5cdde1725969ba9a6d8cb"
+  },
+  "stale_release_refused": true,
+  "stale_release_status": 409,
+  "started_at": "2026-09-21T23:54:53.408206+00:00",
+  "teardown_absent": true,
+  "uid": "26557225-901e-4553-bf41-58dcb55f7e92",
+  "winner": "live-holder-new"
+}

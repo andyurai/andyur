@@ -1,0 +1,9 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_platform_policy",
+  "name": "platform-policy",
+  "instructions": "Platform-owned publisher policy for the demo catalog. It declares ONE consequential authority -- deployments:rollback -- because an agent cannot be GRANTED authority its governed catalog entry does not declare, and the agent-requested-action gate exists to prove exactly that grant being exercised.\n\nThe ceiling is platform-wide in this schema: every agent in a snapshot published against it shares it. That is stated here rather than discovered, and it is why this file is separate from the empty-ceiling policy the other demos use -- publishing the demo catalog against THIS one is a deliberate act, not a default.\n\nThe ceiling is what an agent may be granted, never what it holds. A run still receives only the intersection of the user's entitlements, the scope the trigger asked for, and this -- so an agent under this policy that is triggered without deployments:rollback holds none.",
+  "model": null,
+  "tools": [],
+  "ceiling": {"actions": ["deployments:rollback"], "resources": []}
+}

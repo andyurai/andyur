@@ -1,0 +1,28 @@
+groups:
+  - name: andyur-pilot
+    rules:
+      - alert: AndyurHttpServerErrorRate
+        expr: |
+          sum by (service_name) (rate(andyur_andyur_http_server_requests_total{http_response_status_code_class="5xx"}[5m]))
+          /
+          clamp_min(sum by (service_name) (rate(andyur_andyur_http_server_requests_total[5m])), 0.001)
+          > 0.05
+        for: 10m
+        labels:
+          severity: page
+        annotations:
+          summary: "Andyur {{ $labels.service_name }} HTTP 5xx rate exceeds 5%"
+      - alert: AndyurDependencyFailures
+        expr: sum by (service_name, andyur_dependency) (increase(andyur_andyur_dependency_failures_total[10m])) > 5
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "Repeated Andyur dependency failures"
+      - alert: AndyurRunFailures
+        expr: sum(increase(andyur_andyur_run_outcomes_total{andyur_outcome="failure"}[15m])) > 3
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "Repeated Andyur run failures"

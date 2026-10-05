@@ -1,0 +1,155 @@
+# Reference installation contract. Enterprise deployments may render these
+# names differently, but must retain the permissions and identity selectors.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: andyur-runs
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    # The real-cluster preflight changes this to "true" only after active
+    # allow/deny probes prove the installed CNI enforces NetworkPolicy.
+    andyur.network-policy/verified: "false"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: andyur-run-controller
+  namespace: andyur-runs
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "serviceaccounts"]
+    verbs: ["create", "get", "list", "watch", "patch", "delete", "deletecollection"]
+  # exec/v1 input delivery: the worker writes a run's input into a container's
+  # stdin by attach (the workload's for mode 'stdin', the platform init
+  # container's for mode 'file'). Attach is a Pod SUBRESOURCE and the client
+  # opens it as an HTTP GET websocket upgrade
+  # (connect_get_namespaced_pod_attach), which the apiserver authorizes as
+  # verb `get` -- a create-only rule is refused 403 "cannot get pods/attach".
+  # `create` is kept for SPDY/POST attach clients and because KEP-4006 makes
+  # BOTH required on v1.35+. This widens what the worker may do TO Pods it
+  # already creates and deletes here; it does not widen which Pods it reaches.
+  - apiGroups: [""]
+    resources: ["pods/attach"]
+    verbs: ["create", "get"]
+  # pods/log (get) is a SEPARATE subresource from pods and pods/attach: the
+  # daemon reads a finished stock exec/v1 workload's output via GET
+  # pods/{name}/log to report its completion. Without this the read is 403 and
+  # every exec/v1 summary is stored empty; nothing else reads a log as this SA.
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["create", "get", "list", "watch", "patch", "delete", "deletecollection"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "get", "list", "patch", "delete", "deletecollection"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "list", "patch", "delete", "deletecollection"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "list", "delete", "deletecollection"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: andyur-run-controller
+  namespace: andyur-runs
+subjects:
+  - kind: ServiceAccount
+    name: andyur-worker
+    namespace: andyur-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: andyur-run-controller
+---
+# THE ENGINE'S EXECUTION WORKER: its own Role, not the daemon's (B+ adversarial
+# review). It runs the same launcher, so most of the daemon's rules are needed
+# and kept -- server-side apply creates each run resource (`create` + `patch`),
+# deleting a run group lists its resources by label until they are gone (`get`
+# + `list`, Secrets included), input goes in by attach and an exec/v1 outcome
+# is read from the Pod log. What it never does is left out: it watches nothing,
+# and it takes, reads and releases its run's fence BY NAME and runs no sweep, so
+# it cannot list Leases or delete them as a collection.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: andyur-engine-run-controller
+  namespace: andyur-runs
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "serviceaccounts"]
+    verbs: ["create", "get", "list", "patch", "delete", "deletecollection"]
+  - apiGroups: [""]
+    resources: ["pods/attach"]
+    verbs: ["create", "get"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["create", "get", "list", "patch", "delete", "deletecollection"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "get", "list", "patch", "delete", "deletecollection"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "list", "patch", "delete", "deletecollection"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: andyur-engine-run-controller
+  namespace: andyur-runs
+subjects:
+  - kind: ServiceAccount
+    name: andyur-temporal-execution-worker
+    namespace: andyur-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: andyur-engine-run-controller
+---
+# Installed only when the enterprise SPIRE Controller Manager CRD is present.
+# It selects the trusted proxy Pod, never the untrusted agent Pod. The identity
+# is derived from attested Pod metadata and immutable Andyur labels; no workload
+# supplies its own SPIFFE ID.
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: andyur-run-proxy
+spec:
+  # THIS LINE WAS MISSING, and its absence is silent by design. The SPIRE
+  # controller-manager here runs `watchClassless: false`, so a ClusterSPIFFEID
+  # with no className is not "unclassed" -- it is INVISIBLE. No entry is ever
+  # created, no error is ever logged, and the failure surfaces two components
+  # away as a run proxy reporting
+  #   JwtSourceError: Timeout waiting for the first update
+  # from the workload API, which is true and says nothing about this file.
+  #
+  # The other three ClusterSPIFFEIDs (control-plane.yaml) have always carried
+  # it; this one never has, in any commit. Runs worked on this cluster because
+  # it was carrying a registration entry nobody's manifest created -- which is
+  # precisely what tearing the cluster down between RC passes exists to expose.
+  className: spire-system-andyur-spire
+  # Match the identity schema enforced by server/auth.py. Raw values live in
+  # annotations because Kubernetes label values cannot safely encode every
+  # valid Andyur run id; selectors still use the hashed labels above.
+  spiffeIDTemplate: >-
+    spiffe://andyur.local/agent/{{ index .PodMeta.Annotations "andyur.agent/id-raw" }}/run/{{ index .PodMeta.Annotations "andyur.run/id-raw" }}
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: andyur-runs
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: andyur-run
+      app.kubernetes.io/managed-by: andyur-worker
+      app.kubernetes.io/component: proxy
+  ttl: 15m

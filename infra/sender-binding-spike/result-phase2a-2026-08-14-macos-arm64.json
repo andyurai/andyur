@@ -1,0 +1,70 @@
+{
+  "evidence_inputs": {
+    "oauth_lock": "7b3515be1c41303f3f87aaa0900f4594510f83866191329e996cae5b10ca4a91",
+    "phase1_confinement": "1533cb8a11f63209358a26295c7238692f587dc0688814495e39fb98c880f1a6",
+    "phase2a_gate": "5dc6a0c0c7548dfdbb236676a65f0a564a3cec1c3fc8bb211a12f646d9e6a653",
+    "phase2a_lock": "bcce3667c9afced1f0cfd5893365b4bd6682cbb22451811f4b3eb335abf92d48",
+    "reference_as_go_mod": "b6f15a09ce2fdb2e08e421f7569ba184640ff16b76d10b2661661835b2f2d7c0",
+    "reference_as_go_sum": "16f5d178054ed2917a0c94b616c8523b00d66803d5fb647aabb3e469e736a866",
+    "reference_as_main": "af01354fcd6dd426a0b21848b2c676b631969eb22cdc783eddc317ee8b12dcac",
+    "reference_as_patch": "1338cdf03551117370372fa08e30cbf3a6f3345a9122f66464debc3fe33f0f37",
+    "reference_as_patch_builder": "e04e7556de1b26c1638e6c8b5727df9ef9dd753557b3c07c18caeba884e30e83",
+    "reference_as_test": "9e6d326c6016c8e95a4c1b0e9e1e974ac23e76b9e32e9fd6ae07cc4d90992988",
+    "reference_owned_source_manifest": "38fa5845b2bfaf6111779157d2281c327bedd5e68c224086c4eb0691ff4601b3",
+    "reference_policy_manifest": "81576dd7b9ea32218e5c704bad56896f738f97665e4c5b9ad9e34d7a4e17c987",
+    "verify_phase2a": "155398344a5aa57b10f846509c4a0360c551f51894e4255bea6c9fa5465c0af7"
+  },
+  "issued": {
+    "act": {
+      "act": {
+        "sub": "chat-app"
+      },
+      "sub": "spiffe://andyur.example/agent/sre/run/phase2a"
+    },
+    "aud": "https://telemetry.internal/teams/checkout",
+    "sub": "alice"
+  },
+  "mature_client": {
+    "cnf_matches": true,
+    "token_type": "DPoP"
+  },
+  "negative_denials": {
+    "alg_none": 400,
+    "future_iat": 400,
+    "missing_proof": 400,
+    "private_jwk_member": 400,
+    "replayed_jti": 400,
+    "signature_key_mismatch": 400,
+    "stale_iat": 401,
+    "symmetric_alg_and_jwk": 400,
+    "wrong_htm": 400,
+    "wrong_htu": 400,
+    "wrong_typ": 400
+  },
+  "profile": {
+    "dpop_required": true,
+    "gate_deadline_seconds": 40,
+    "go_oidc_commit": "6aeac93f370044ca9a59a556b9230cd10bd96868",
+    "go_oidc_version": "v0.25.0",
+    "request_deadline_seconds": 3,
+    "teardown_deadline_seconds": 2,
+    "tls_direct": true
+  },
+  "profile_note": "The client-generated ordinary token proof contains neither nonce nor ath; unknown proof claims are not treated as an AS authorization input.",
+  "reference_as": {
+    "https": true,
+    "issuer": "https://localhost:52630"
+  },
+  "schema": "andyur.sender-binding.phase2a/v1",
+  "semantic_negative_mutations": {
+    "actor_drift": "ValueError",
+    "cnf_extra_member": "ValueError",
+    "cnf_missing": "ValueError",
+    "cnf_wrong_holder": "ValueError",
+    "subject_drift": "ValueError",
+    "token_type_ambiguous": "ValueError",
+    "token_type_bearer": "ValueError",
+    "token_type_missing": "ValueError"
+  },
+  "status": "pass"
+}

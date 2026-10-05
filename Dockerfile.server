@@ -1,0 +1,86 @@
+# Andyur control-plane server image, for running multiple stateless replicas
+# behind a load balancer against a shared Postgres. Only the server's
+# dependencies are installed (no agent-execution SDK): the server never runs
+# agents, it only owns state and serves the API.
+FROM python:3.12-slim
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    "fastapi>=0.115" "uvicorn[standard]>=0.30" "httpx>=0.27" \
+    "python-multipart>=0.0.9" \
+    "python-dotenv>=1.0" "croniter>=2.0" \
+    "opentelemetry-sdk>=1.27" "opentelemetry-exporter-otlp-proto-http>=1.27" \
+    "psycopg[binary]>=3.1" \
+    "pyjwt>=2.8" "cryptography>=42" \
+    "spiffe>=0.3,<0.4" \
+    "kubernetes>=36.0,<37" \
+    "temporalio>=1.33,<2"
+# WHY THE TEMPORAL SDK IS HERE. Every caller of the workflow provider lives
+# under `andyur/server/` -- the trigger endpoint, the task and message wakeups,
+# cron, the drain, halt and unhalt, and the heartbeat. The worker daemon never
+# constructs a provider; its `orchestrator` is the EXECUTION port, a different
+# seam (ADR-014 D7). The daemon image carries the SDK too, for one reason: it
+# also runs the engine's execution worker (ADR-014 D11).
+#
+# It is a hard dependency of the IMAGE and still an optional extra of the
+# PACKAGE. `pip install andyur` gets no engine and the ten-minute path stays a
+# laptop; this image is the one that runs in a cluster where the engine may be
+# the bound provider, and a control plane that starts healthy and then cannot
+# construct the provider it is configured for is the worst of both.
+# Measured before it was fixed: `importlib.util.find_spec("temporalio")` was
+# None in the running server Pod.
+# WHY THE KUBERNETES CLIENT IS IN THE *SERVER* IMAGE, which otherwise installs
+# nothing it does not need. The consequential action is the one thing the
+# control plane DOES to a cluster: the agent requests a rollback, the server
+# decides, and then the SERVER performs it with its own ServiceAccount
+# (andyur/server/kubernetes_deployments.py). The worker launches runs; it does
+# not roll deployments back, and giving it that authority instead would put the
+# credential in the component the agent's runtime is nearest to.
+#
+# It was missing, and nothing noticed until an agent actually asked. The
+# decision path was fully exercised in-suite and by the `action` lane -- both
+# of which drive the module in-process, where the import is satisfied by the
+# developer's environment. Live, against the shipped image, the row read
+# `decision: allowed, result: failed, ModuleNotFoundError: No module named
+# 'kubernetes'`: the platform authorised an action it could not carry out.
+# That is exactly the gap between "the decision is right" and "the product
+# works", and it took an agent asking through the real path to find it.
+
+# The governed registry (ANDYUR_REGISTRY=governed) shells out to cosign to
+# verify the snapshot's signature and to oras to pull it (andyur/registry/
+# governed.py). Pinned by version AND checksum per architecture, the way the
+# runner pins agentgateway: an unverified download is not a trust anchor.
+ARG COSIGN_VERSION=3.1.3
+ARG COSIGN_SHA256_AMD64=4629c757b7618056f8ddd7e2625ae9fdd94c0372a65049520bc7d9df9efc7f71
+ARG COSIGN_SHA256_ARM64=c5d324e091826b0d7a78eb16fef316450b4eb9aaec045611c08ba06f5e73220a
+ARG ORAS_VERSION=1.3.3
+ARG ORAS_SHA256_AMD64=9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+ARG ORAS_SHA256_ARM64=ac7156f93a21e903f7ad606c792f3560f17e0cd0e36365634701b1e7cc4e4eca
+RUN set -eu; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) cosign_sha="$COSIGN_SHA256_AMD64"; oras_sha="$ORAS_SHA256_AMD64" ;; \
+      arm64) cosign_sha="$COSIGN_SHA256_ARM64"; oras_sha="$ORAS_SHA256_ARM64" ;; \
+      *) echo "no cosign/oras pin for $arch" >&2; exit 1 ;; \
+    esac; \
+    apt-get update && apt-get install -y --no-install-recommends curl ca-certificates; \
+    curl -fsSL -o /usr/local/bin/cosign \
+      "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-${arch}"; \
+    echo "${cosign_sha}  /usr/local/bin/cosign" | sha256sum -c -; \
+    chmod 0755 /usr/local/bin/cosign; \
+    curl -fsSL -o /tmp/oras.tar.gz \
+      "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_${arch}.tar.gz"; \
+    echo "${oras_sha}  /tmp/oras.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/oras.tar.gz -C /usr/local/bin oras && rm /tmp/oras.tar.gz; \
+    chmod 0755 /usr/local/bin/oras; \
+    /usr/local/bin/cosign version; /usr/local/bin/oras version; \
+    apt-get purge -y curl && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+COPY andyur ./andyur
+COPY demos/agent-registry ./demos/agent-registry
+COPY infra/docker-entrypoint-server.sh /usr/local/bin/andyur-server-entrypoint
+RUN chmod 0755 /usr/local/bin/andyur-server-entrypoint
+
+EXPOSE 8642
+# entrypoint handles mTLS (ANDYUR_MTLS=on -> export X509-SVID + require client certs)
+CMD ["/usr/local/bin/andyur-server-entrypoint"]

@@ -1,0 +1,70 @@
+# ANDYUR'S OWN KUBERNETES CREDENTIAL, for exactly one remediation.
+#
+# Board rows 9-12. The agent requests a rollback and never performs one: it
+# holds no Kubernetes credential, and its NetworkPolicy grants one egress peer
+# which is not the API server. The control plane decides and then acts, with
+# this identity.
+#
+# APPLIED EXPLICITLY, NEVER BY DEFAULT. `control-plane.yaml` sets
+# `automountServiceAccountToken: false` on the andyur-server ServiceAccount, so
+# out of the box the control plane has NO cluster credential at all and the
+# consequential action fails closed with `result: failed`. A deployment that
+# wants the action opts in, in two steps, and both are visible in the manifests
+# rather than in someone's shell history:
+#
+#   1. kubectl apply -f rbac-consequential-action.yaml     (this file)
+#   2. patch the andyur-server Pod spec to mount its token:
+#      kubectl -n andyur-system patch deployment andyur-server --type merge \
+#        -p '{"spec":{"template":{"spec":{"automountServiceAccountToken":true}}}}'
+#
+# WHY THE ROLE IS THIS NARROW. The credential is bounded by RBAC, not by
+# intent: a total compromise of the control-plane process must not be able to
+# delete a namespace, read a Secret, or touch a workload the operator did not
+# name. So this is a Role (namespaced, not Cluster), on ONE namespace, with the
+# four verbs one rollback needs and no fifth:
+#
+#   deployments  get     read the current revision, before and after
+#                patch   restore the previous revision's pod template
+#   replicasets  get     read a candidate revision's pod template
+#                list    find the deployment's own revision history
+#
+# `resourceNames` pins the deployment by name where the verb supports it. LIST
+# cannot be pinned by resourceNames (the API server evaluates the rule before it
+# knows what the list contains), which is why replicasets are listed and not
+# read arbitrarily -- and why the adapter filters what comes back by OWNER UID.
+#
+# THE NAMESPACE AND DEPLOYMENT BELOW ARE THE EXAMPLE FROM THE MVP DEMO
+# (INC-4471, prod/checkout-service). An adopter edits both; nothing in the
+# platform infers them, and the run's PIN is what makes a request legitimate,
+# so a mismatch between this Role and the pin fails as a Kubernetes Forbidden
+# recorded on the action row rather than as a silent widening.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: andyur-consequential-rollback
+  namespace: prod
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["checkout-service"]
+    verbs: ["get", "patch"]
+  # LIST cannot carry resourceNames; ownership is enforced in the adapter by
+  # comparing each ReplicaSet's ownerReferences UID to the deployment's.
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: andyur-consequential-rollback
+  namespace: prod
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: andyur-consequential-rollback
+subjects:
+  - kind: ServiceAccount
+    name: andyur-server
+    namespace: andyur-system

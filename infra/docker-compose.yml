@@ -1,0 +1,505 @@
+# Local observability backend for Andyur.
+#
+# Jaeger v2 receives OTLP spans from the server, daemon, and runner
+# and renders each agent run as one distributed trace at http://localhost:16686.
+#
+#   docker compose -f infra/docker-compose.yml up -d    (or ./run.sh jaeger)
+services:
+  # Full single-host Andyur deployment. Do not start these services directly:
+  # `./run.sh docker-up` creates the two security boundaries (SPIRE and the
+  # internal run network), registers the role identities, builds the runner,
+  # and then starts this profile. The wrapper is the supported contract.
+  andyur-server:
+    profiles: ["andyur"]
+    build:
+      context: ..
+      dockerfile: Dockerfile.server
+    image: andyur-server
+    container_name: andyur-server
+    labels:
+      andyur.role: server
+    environment: &andyur_environment
+      ANDYUR_PROFILE: prod
+      ANDYUR_DEPLOYMENT: docker
+      ANDYUR_AGENT_AUTH: "on"
+      ANDYUR_DELEGATIONS: ${ANDYUR_DELEGATIONS:-*}
+      # The supported wrapper always supplies this. Keep interpolation optional
+      # here so unrelated profiles (for example `jaeger`) remain usable; the
+      # production profile rejects an empty value if someone bypasses it.
+      ANDYUR_RUN_TOKEN_SECRET: ${ANDYUR_RUN_TOKEN_SECRET:-}
+      ANDYUR_SANDBOX: "on"
+      ANDYUR_SANDBOX_NETWORK: andyur-runs
+      ANDYUR_SECCOMP: require
+      ANDYUR_REQUIRE_RUN_SVID: "on"
+      SPIFFE_ENDPOINT_SOCKET: unix:/run/spire/sockets/api.sock
+      ANDYUR_DATA_DIR: /var/lib/andyur
+      # INSTALLED BUNDLES LIVE ON THE VOLUME, not in the image. The
+      # default registry directory is inside the container filesystem,
+      # so `andyur bundle install` survived until the next
+      # `docker-up` and then vanished -- and the failure it caused was
+      # nowhere near the cause: every run 503s on /agents/{name}/context
+      # because the server can no longer resolve the agent's registry id.
+      ANDYUR_AGENT_REGISTRY_DIR: /var/lib/andyur/registry
+      ANDYUR_SERVER_URL: http://andyur-server:8642
+      ANDYUR_LLM: ${ANDYUR_LLM:-ollama}
+      # NAMES A SERVICE THIS FILE DOES NOT DEFINE, on purpose and now
+      # said out loud. Runs sit on the INTERNAL `andyur-runs` network
+      # with no route to the host, and `_container_url` does not rewrite
+      # under the prod profile -- so a model on the host is unreachable
+      # however it is addressed, and `host.docker.internal` here only
+      # looks like a fix. Give runs a model by attaching one to that
+      # network under this name, or by pointing ANDYUR_LLM at the
+      # `llm` profile's litellm gateway, which is a container runs can
+      # resolve. Without one, a run fails at its first model call.
+      ANDYUR_OLLAMA_URL: ${ANDYUR_OLLAMA_URL:-http://ollama:11434}
+      # User identity is opt-in (off by default so the deployment runs without
+      # an IdP). To turn it on against the bundled `idp` profile, set these in
+      # data/docker.env -- `./run.sh idp up` prints the exact values. Any OIDC
+      # provider works; the reference Keycloak is just the runnable default.
+      ANDYUR_USER_AUTH: ${ANDYUR_USER_AUTH:-off}
+      ANDYUR_OIDC_ISSUER: ${ANDYUR_OIDC_ISSUER:-}
+      ANDYUR_OIDC_JWKS: ${ANDYUR_OIDC_JWKS:-}
+      ANDYUR_OIDC_AUDIENCE: ${ANDYUR_OIDC_AUDIENCE:-}
+      ANDYUR_ADMIN_ROLE: ${ANDYUR_ADMIN_ROLE:-}
+    volumes:
+      - andyur-data:/var/lib/andyur
+      - andyur-spire-sockets:/run/spire/sockets:ro
+    ports:
+      - "127.0.0.1:${ANDYUR_PORT:-8642}:8642"
+    networks:
+      - andyur-control
+      - andyur-runs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8642/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  andyur-worker:
+    profiles: ["andyur"]
+    build:
+      context: ..
+      dockerfile: Dockerfile.daemon
+    image: andyur-worker
+    container_name: andyur-worker
+    labels:
+      andyur.role: worker
+    environment:
+      <<: *andyur_environment
+      ANDYUR_WORKER_ID: andyur-worker
+      ANDYUR_WORKER_SLOTS: ${ANDYUR_WORKER_SLOTS:-2}
+      ANDYUR_SPIRE_REGISTRAR: "on"
+      ANDYUR_SPIRE_SERVER_CONTAINER: andyur-spire-server
+      ANDYUR_SPIRE_SOCKET_VOLUME: andyur-spire-sockets
+      ANDYUR_SANDBOX_IMAGE: andyur-runner
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - andyur-worker-data:/var/lib/andyur
+      - andyur-spire-sockets:/run/spire/sockets:ro
+    networks:
+      - andyur-control
+      - andyur-runs
+    depends_on:
+      andyur-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Ephemeral, attested operator shell. Invoked by `./run.sh docker-cli ...`;
+  # it is not a long-running third control-plane instance.
+  andyur-cli:
+    profiles: ["operator"]
+    image: andyur-worker
+    entrypoint: ["python", "-m", "andyur.cli"]
+    labels:
+      andyur.role: operator
+    environment:
+      ANDYUR_PROFILE: prod
+      ANDYUR_DEPLOYMENT: docker
+      ANDYUR_SERVER_URL: http://andyur-server:8642
+      SPIFFE_ENDPOINT_SOCKET: unix:/run/spire/sockets/api.sock
+    volumes:
+      - andyur-spire-sockets:/run/spire/sockets:ro
+    networks:
+      - andyur-control
+
+  # --- Reference identity provider: `idp` profile ----------------------------
+  # Keycloak with its own PostgreSQL, brought up by `./run.sh idp up` (the
+  # supported wrapper: it generates the IdP secrets into data/docker.env and
+  # waits for OIDC discovery). Reachability is the security contract here:
+  # keycloak joins andyur-control (the server fetches its JWKS there) and the
+  # internal andyur-idp network (its database), and is NEVER on andyur-runs --
+  # an agent run has no route to the IdP. The database joins andyur-idp ONLY.
+  # An adopter swaps this whole profile for their own OIDC provider by setting
+  # the ANDYUR_OIDC_* variables instead; nothing else references it.
+  #
+  # The imported realm is the bundled DEMO realm (fixed users alice/bob/carol,
+  # ROPC left on for the andyur-cli test client): a reference to log in
+  # against, not a tenant directory. Its credentials are PUBLIC by definition
+  # -- the user passwords and the andyur-agent confidential client's secret
+  # ("agent-secret", token exchange enabled) are committed to the repo, so
+  # anything that can reach this Keycloak can authenticate as them. The
+  # generated admin/DB secrets protect the IdP's own control surfaces, not the
+  # demo realm's contents. A production install replaces the import with its
+  # own realm or IdP. Note Keycloak imports ONLY into a fresh database: realm
+  # JSON edits are picked up by `./run.sh idp reset`, not by a restart.
+  # Grafana, FEDERATED TO KEYCLOAK. Two independent auth paths, and the demo
+  # needs both:
+  #   * generic_oauth -- Sarah's BROWSER logs in via Keycloak. This is what
+  #     makes the federation visible: her name in the corner of the UI.
+  #   * auth.jwt      -- the MCP tool server presents a Keycloak-issued token
+  #     for the API. NO Grafana password and NO API key exists anywhere.
+  # The auth URL is the one the BROWSER resolves (loopback); the token and
+  # userinfo URLs are the ones GRAFANA resolves (in-network). KC_HOSTNAME
+  # pins the issuer to the loopback form, so both sides validate one `iss`.
+  grafana:
+    profiles: ["idp"]
+    image: ${ANDYUR_GRAFANA_IMAGE:-grafana/grafana:11.6.0}
+    container_name: andyur-grafana
+    labels:
+      andyur.role: resource-server
+    environment:
+      GF_SERVER_ROOT_URL: http://127.0.0.1:${ANDYUR_GRAFANA_PORT:-3000}
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: Keycloak
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: grafana
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: ${ANDYUR_GRAFANA_OIDC_SECRET:-grafana-oidc-secret}
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid email profile roles"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: http://127.0.0.1:${ANDYUR_IDP_PORT:-8480}/realms/andyur/protocol/openid-connect/auth
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: http://keycloak:8080/realms/andyur/protocol/openid-connect/token
+      GF_AUTH_GENERIC_OAUTH_API_URL: http://keycloak:8080/realms/andyur/protocol/openid-connect/userinfo
+      GF_AUTH_GENERIC_OAUTH_LOGIN_ATTRIBUTE_PATH: preferred_username
+      GF_AUTH_GENERIC_OAUTH_NAME_ATTRIBUTE_PATH: name
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(realm_access.roles[*], 'andyur-admin') && 'Admin' || 'Editor'"
+      # The API leg. Grafana REFUSES a plaintext jwk_set_url (https only), so
+      # the key set is mounted as a file -- pinned, and re-rendered by
+      # `infra/grafana/refresh-jwks.sh` when Keycloak rotates its keys.
+      GF_AUTH_JWT_ENABLED: "true"
+      GF_AUTH_JWT_HEADER_NAME: X-Andyur-Auth
+      GF_AUTH_JWT_JWK_SET_FILE: /etc/grafana/jwks.json
+      # `sub` -- because this leg validates ANDYUR-minted tokens too, and RFC
+      # 8693 puts the human in `sub` while the agent chain goes in `act`.
+      # Keycloak's own tokens carry the username here as well once the realm's
+      # mappers are in place, so both issuers converge on ONE Grafana user.
+      GF_AUTH_JWT_USERNAME_CLAIM: sub
+      # A RESOURCE SERVER REFUSING A FAKE HUMAN. `andyur_sub_src` records HOW
+      # the subject was established; "idp" means a real login. Without this a
+      # server cannot tell a genuine user from a name an API client typed --
+      # both arrive as a signed `sub`. This is the `asserted` gap, closed by
+      # the party that actually cares.
+      GF_AUTH_JWT_EXPECT_CLAIMS: '{"andyur_sub_src":"idp","aud":"http://127.0.0.1:8804/mcp"}'
+      GF_AUTH_JWT_AUTO_SIGN_UP: "true"
+      # THE TWO LEGS TAKE THEIR ROLE FROM DIFFERENT PLACES, deliberately.
+      # The browser leg reads the IdP realm role (Sarah=Editor, David=Admin).
+      # This leg validates ANDYUR-minted tokens, which carry no realm roles --
+      # authority there is the token's SCOPE, checked and PINNED by the tool
+      # server before Grafana ever sees the call. Leaving the realm-role
+      # expression here made every delegated call a Viewer, so an authorised
+      # write came back "Access denied to save the annotation" from Grafana
+      # while Andyur had correctly allowed it. Grafana's RBAC is the coarse
+      # floor; the fine-grained answer was already given upstream.
+      GF_AUTH_JWT_ROLE_ATTRIBUTE_PATH: "'Editor'"
+    volumes:
+      - ../data/grafana/jwks.json:/etc/grafana/jwks.json:ro
+      # GRAFANA'S OWN DATABASE. Without this, every `up --force-recreate`
+      # silently discards the annotations the agents wrote -- which are the
+      # demo's evidence that a delegated write reached a real resource server
+      # and was attributed to a real human. A demo whose proof disappears when
+      # the container restarts is not proof.
+      - andyur-grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${ANDYUR_GRAFANA_PORT:-3000}:3000"
+    # ONLY the control segment. `andyur-idp` is the IdP's INTERNAL segment and
+    # admits exactly keycloak + keycloak-db: a third service on it has a route
+    # to the IdP's database. Grafana reaches Keycloak over andyur-control,
+    # where Keycloak also sits, which is all it needs for the token and
+    # userinfo legs. tests/test_idp_reference.py enforces the exclusivity.
+    networks:
+      - andyur-control
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  keycloak:
+    profiles: ["idp"]
+    image: ${ANDYUR_KC_IMAGE:-quay.io/keycloak/keycloak:26.2}
+    container_name: andyur-keycloak
+    labels:
+      andyur.role: idp
+    # Refuse to boot without the generated secrets rather than come up with an
+    # unauthenticated admin (same pattern as litellm below).
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        : "$${KC_BOOTSTRAP_ADMIN_PASSWORD:?use ./run.sh idp up -- it generates the IdP secrets}"
+        : "$${KC_DB_PASSWORD:?use ./run.sh idp up -- it generates the IdP secrets}"
+        exec /opt/keycloak/bin/kc.sh start --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${ANDYUR_IDP_DB_PASSWORD:-}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${ANDYUR_IDP_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${ANDYUR_IDP_ADMIN_PASSWORD:-}
+      # HTTP is confined to the loopback publish + the two compose networks;
+      # TLS in front of Keycloak is a reverse-proxy concern in a real deploy.
+      KC_HTTP_ENABLED: "true"
+      # One canonical issuer -- the URL the operator's browser uses. In-network
+      # callers still REACH http://keycloak:8080 (e.g. for JWKS), but tokens
+      # carry this `iss` either way, so both sides validate the same string.
+      # Corollary: the discovery document's endpoint URLs (jwks_uri,
+      # token_endpoint) are this loopback URL from EVERY network, so an
+      # in-network caller must use explicit endpoint URLs (as ANDYUR_OIDC_JWKS
+      # does), never discovery-driven wiring.
+      KC_HOSTNAME: http://127.0.0.1:${ANDYUR_IDP_PORT:-8480}
+      # health endpoints on the management port (9000), used by the healthcheck
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./keycloak/realm-andyur.json:/opt/keycloak/data/import/realm-andyur.json:ro
+    ports:
+      - "127.0.0.1:${ANDYUR_IDP_PORT:-8480}:8080"
+    networks:
+      - andyur-control
+      - andyur-idp
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    # The image ships no curl/wget, so probe the management health endpoint
+    # with bash's /dev/tcp (the upstream-recommended pattern). Without this,
+    # `idp status` says "Up" for a container whose realm import or DB auth
+    # failed after boot.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  keycloak-db:
+    profiles: ["idp"]
+    image: postgres:17
+    container_name: andyur-keycloak-db
+    labels:
+      andyur.role: idp-db
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_DB: keycloak
+      # Postgres itself refuses to initialize with an empty password.
+      POSTGRES_PASSWORD: ${ANDYUR_IDP_DB_PASSWORD:-}
+    volumes:
+      - andyur-idp-db:/var/lib/postgresql/data
+    networks:
+      - andyur-idp
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Shared model gateway. LLM traffic only: tool traffic belongs to the per-run
+  # Andyur sidecar. The digest pins the v1.95.0 multi-platform image rather than
+  # a mutable release tag.
+  litellm:
+    profiles: ["llm"]
+    image: docker.litellm.ai/berriai/litellm@sha256:af806882b7a6ced41658db5b6a7e98ed7b9b51d03b935e0417bf1c8552d688af
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        : "$${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY}"
+        : "$${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY}"
+        exec litellm --config /app/config.yaml --host 0.0.0.0 --port 4000 --telemetry False
+    environment:
+      # Defaults keep unrelated compose profiles usable. The service entrypoint
+      # itself refuses empty secrets before LiteLLM starts.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_API_BASE: ${ANTHROPIC_API_BASE:-https://api.anthropic.com}
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-}
+      OTEL_EXPORTER: otlp_http
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: andyur-litellm
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+    ports:
+      - "127.0.0.1:${ANDYUR_LITELLM_PORT:-4000}:4000"
+    depends_on:
+      - jaeger
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # THE OPENTELEMETRY COLLECTOR, running the SAME config the cluster runs
+  # (infra/observability/otel-collector.yaml). It is here because without it a
+  # laptop is not the deployed architecture: every component pointed straight
+  # at Jaeger, which serves /v1/traces and 404s /v1/metrics, so every metric
+  # the platform emitted locally was discarded in silence and no metric
+  # assertion made on a dev stack meant anything. `jaeger.yaml`'s own header
+  # already described itself as "the DEV trace backend behind the
+  # OpenTelemetry Collector"; only the compose file disagreed.
+  #
+  # It owns 4317/4318 now. Jaeger still receives traces -- from the collector,
+  # over the internal network -- and still serves its UI and query API on
+  # 16686, which is what the gates read back.
+  otel-collector:
+    # No profile, exactly like `jaeger`: `./run.sh jaeger` brings up the default
+    # set, and the collector is not optional -- without it the metrics pipeline
+    # has nowhere to land.
+    # The SAME digest infra/kubernetes/observability.yaml pins, so the laptop
+    # and the cluster run the same collector byte for byte.
+    image: docker.io/otel/opentelemetry-collector-contrib@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+    container_name: andyur-otel-collector
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./observability/otel-collector.yaml:/etc/otel/config.yaml:ro
+    environment:
+      # The one seam an adopter repoints at Tempo, Honeycomb or any OTLP/HTTP
+      # backend without touching the platform.
+      ANDYUR_TELEMETRY_BACKEND_OTLP_ENDPOINT: http://jaeger:4318
+      GOMEMLIMIT: 400MiB
+    ports:
+      - "127.0.0.1:4317:4317"     # OTLP gRPC ingest
+      - "127.0.0.1:4318:4318"     # OTLP HTTP ingest
+      - "127.0.0.1:9464:9464"     # Prometheus scrape: the metrics, readable
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+
+  jaeger:
+    # Jaeger v2 2.20.0 (v1 is end-of-life since 2025-12-31), the same
+    # digest-pinned image and the same config file the Kubernetes deployment
+    # runs (infra/kubernetes/observability.yaml). In-memory, bounded storage:
+    # a dev backend; traces do not survive a restart.
+    image: cr.jaegertracing.io/jaegertracing/jaeger@sha256:46a886260e04002d8f45e213fc39063fa11a50446048fdaa64786fc0840cb9f8
+    container_name: andyur-jaeger
+    command: ["--config=/etc/jaeger/config.yaml"]
+    volumes:
+      - ./observability/jaeger.yaml:/etc/jaeger/config.yaml:ro
+    ports:
+      # 4317/4318 belong to the collector now; Jaeger receives traces from it
+      # over the compose network. Only the UI and query API are published.
+      - "127.0.0.1:16686:16686"   # Jaeger UI and query API
+    restart: unless-stopped
+
+  # Shared state store for multi-node (multiple server replicas). Point Andyur
+  # at it with ANDYUR_DB_URL=postgresql://andyur:andyur@localhost:5432/andyur
+  postgres:
+    image: postgres:17
+    container_name: andyur-postgres
+    environment:
+      POSTGRES_USER: andyur
+      POSTGRES_PASSWORD: andyur
+      POSTGRES_DB: andyur
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andyur"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Object storage for the agent mind (S3-compatible). Point Andyur at it with
+  # ANDYUR_STORAGE=s3 (defaults already match: endpoint :9000, bucket 'andyur',
+  # minioadmin/minioadmin). Console at http://localhost:9001.
+  minio:
+    image: minio/minio:latest
+    container_name: andyur-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Memory graph store for associative agent memory (Phase 6). Point Andyur at
+  # it with ANDYUR_GRAPH=neo4j (defaults already match: bolt://localhost:7687,
+  # user neo4j, password andyurgraph). Browser at http://localhost:7474.
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: andyur-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/andyurgraph
+    ports:
+      - "127.0.0.1:7474:7474"   # Neo4j browser
+      - "127.0.0.1:7687:7687"   # Bolt protocol
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # --- Multi-node control plane: two stateless server replicas behind a load
+  # balancer, all against the shared Postgres. Bring this tier up with the
+  # 'multinode' profile: docker compose --profile multinode up -d
+  # (host daemons/runners then point ANDYUR_SERVER_URL at the LB on :8642).
+  server1: &server
+    profiles: ["multinode"]
+    build:
+      context: ..
+      dockerfile: Dockerfile.server
+    environment:
+      ANDYUR_DB_URL: postgresql://andyur:andyur@postgres:5432/andyur
+      ANDYUR_WORKSPACE_DIR: /workspace
+      ANDYUR_OTEL: "on"
+      ANDYUR_OTEL_ENDPOINT: http://jaeger:4318
+    volumes:
+      # share the agent "mind" with the host runner via a bind mount (the
+      # shared-filesystem approach to a multi-node workspace)
+      - ../data/workspace:/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  server2:
+    <<: *server
+
+  lb:
+    profiles: ["multinode"]
+    image: nginx:1.27
+    container_name: andyur-lb
+    ports:
+      - "127.0.0.1:8642:8642"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on: [server1, server2]
+    restart: unless-stopped
+
+volumes:
+  andyur-grafana-data:
+  andyur-data:
+    name: andyur-data
+  andyur-worker-data:
+    name: andyur-worker-data
+  andyur-idp-db:   # the reference IdP's own state, separate from Andyur's
+    name: andyur-idp-db
+  andyur-spire-sockets:
+    external: true
+    name: andyur-spire-sockets
+
+networks:
+  andyur-control:
+    name: andyur-control
+  # The reference IdP's database segment: internal (no host/internet route),
+  # joined only by keycloak and keycloak-db. The live gate asserts both the
+  # Internal flag and the exact membership.
+  andyur-idp:
+    name: andyur-idp
+    internal: true
+  # Created as `Internal=true` by docker-stack.sh and treated as external so
+  # Compose cannot silently replace the egress boundary with a normal bridge.
+  andyur-runs:
+    external: true
+    name: andyur-runs

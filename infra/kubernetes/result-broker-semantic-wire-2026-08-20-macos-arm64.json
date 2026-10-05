@@ -1,0 +1,96 @@
+{
+  "config_sha256": {
+    "egress.json": "0f09bbac51585c6765511b1839d2606fd4e3e02041055d947e14af9d67e352e4",
+    "ingress.json": "14f204c3e0e332c47cd0e63d866b2e124e33f8e84cee710a50b108418643d172",
+    "wrong.json": "269237b4a15228047eab82d26c09e957cbd72e9e99c2c0c80ff6a95a43146459"
+  },
+  "envoy_image": "docker.io/envoyproxy/envoy@sha256:d59f7f5fa10cff6d5892b6c5e7df5c9297ddfb2c3683e33fbfb82da24de4fa66",
+  "executed_source_sha256": {
+    "andyur/dataplane/brokertransport.py": "ebaf50af2ee56694184e688727a795e4fb524c53dc1aadac50aa31ddb9ead2a7",
+    "andyur/server/app.py": "e2eddacd274dca7a75cca48da2462c75fe4c5c9fd5913c84d513b3b83c5e46b9",
+    "andyur/server/auth.py": "dcad7b66eb3830df4311f15700896caa2d7ef5fe7a156d1b99c5f1988379b673",
+    "andyur/server/brokerstate_server.py": "4fe828e933a487fed7ab1efd2e41ca1575a19327e58dac81fb0672714acb29e7"
+  },
+  "finished_at_epoch": 1791144251.262738,
+  "halt_replay": {
+    "run_state": "failed",
+    "status": 401
+  },
+  "identity_mutation_red_restored": {
+    "forged_peer_accepted_status": 200,
+    "mutation_applied": true,
+    "restored_refusal_status": 403
+  },
+  "platform": "macOS-14.8.3-arm64-arm-64bit",
+  "positive": {
+    "forged_xfcc_sanitized": true,
+    "state": {
+      "actions": [
+        "read"
+      ],
+      "agent": "wire-agent",
+      "audiences": [
+        "urn:calendar"
+      ],
+      "expected_actor": "spiffe://andyur.local/agent/wire-agent/run/202e103ece2f40cf912a23283ffa7281",
+      "expected_subject": "alice",
+      "live": true,
+      "pin": {
+        "account": "447"
+      },
+      "registry_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "run_id": "202e103ece2f40cf912a23283ffa7281",
+      "schema": "andyur.deny-broker-state/v1"
+    },
+    "status": 200
+  },
+  "run_context": {
+    "agent": "wire-agent",
+    "control_plane": "spiffe://andyur.local/control-plane",
+    "expected_actor": "spiffe://andyur.local/agent/wire-agent/run/202e103ece2f40cf912a23283ffa7281",
+    "run_id": "202e103ece2f40cf912a23283ffa7281",
+    "wrong_actor": "spiffe://andyur.local/agent/wire-agent/run/b756cb2cd77f40e78d7d8bd40a1b7baa",
+    "wrong_run_id": "b756cb2cd77f40e78d7d8bd40a1b7baa"
+  },
+  "saturation": {
+    "authenticated_positive_status": 200,
+    "recovered_status": 200,
+    "refused": 96,
+    "requests": 96,
+    "status_distribution": {
+      "503": 36,
+      "504": 60
+    }
+  },
+  "sds_rotation": {
+    "after": [
+      "db847ba3af26a213093cfdd9372af5a3"
+    ],
+    "before": [
+      "4b4a88d2435cf7cbdb06a1523a4020be"
+    ],
+    "rotated": true
+  },
+  "server_image": "andyur-server:extseams-9d7a5ee-2002",
+  "server_image_id": "sha256:e348116800d7da0e35d2ed4b00dfebe829da6f75490d8c30788cc53d29c6bcc1",
+  "source_sha256": {
+    "andyur/dataplane/brokertransport.py": "ebaf50af2ee56694184e688727a795e4fb524c53dc1aadac50aa31ddb9ead2a7",
+    "andyur/server/app.py": "e2eddacd274dca7a75cca48da2462c75fe4c5c9fd5913c84d513b3b83c5e46b9",
+    "andyur/server/auth.py": "dcad7b66eb3830df4311f15700896caa2d7ef5fe7a156d1b99c5f1988379b673",
+    "andyur/server/brokerstate_server.py": "4fe828e933a487fed7ab1efd2e41ca1575a19327e58dac81fb0672714acb29e7",
+    "infra/kubernetes/verify-broker-semantic-wire.py": "8f45d15a4dfb7c97fbfa71f5d48c58559047d8f012f10862dcb62c5bd2f4b18a",
+    "infra/kubernetes/verify-broker-semantic-wire.sh": "55f713a3584a057295889e2cf0e24ae9299b973fd2d122cc59cef1cb2d12135d",
+    "infra/spire/docker/agent.conf": "c7a2802fac9a109600b593635c78569954d655f1a4766dc0c393686e7d767b0d",
+    "infra/spire/docker/server.conf": "ec15b936c877217076c9cb37cb52aba76b6cc55777bdb9188ac11ee964c18ebb"
+  },
+  "started_at_epoch": 1791144212.8303528,
+  "teardown": {
+    "containers_absent": true,
+    "spire_down": true,
+    "volumes_absent": true
+  },
+  "wrong_peer_replay": {
+    "captured_jwt_replayed": true,
+    "status": 403
+  }
+}

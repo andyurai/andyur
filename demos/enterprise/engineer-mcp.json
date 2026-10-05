@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "jira":       { "type": "http", "url": "http://127.0.0.1:8802/mcp",
+                    "andyur": { "authority": true } },
+    "servicenow": { "type": "http", "url": "http://127.0.0.1:8801/mcp",
+                    "andyur": { "authority": true } }
+  }
+}

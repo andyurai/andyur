@@ -1,0 +1,600 @@
+{
+ "allowed": {
+  "after": {
+   "generation": 3,
+   "image": "registry.k8s.io/pause:3.9",
+   "revision": "3",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "image": "registry.k8s.io/pause:3.9",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  },
+  "before": {
+   "generation": 2,
+   "image": "registry.k8s.io/pause:3.10",
+   "revision": "2",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout",
+      "bad-release": "true"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "env": [
+        {
+         "name": "BAD_RELEASE",
+         "value": "true"
+        }
+       ],
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      },
+      {
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "bad-sidecar",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "serviceAccount": "bad-release-account",
+     "serviceAccountName": "bad-release-account",
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  },
+  "row": {
+   "approved_at": null,
+   "approved_by": null,
+   "approved_by_asserted_by": null,
+   "decided_at": "2026-10-04T20:02:36+00:00",
+   "decision": "allowed",
+   "decision_reason": "write_authorized",
+   "finished_at": "2026-10-04T20:02:36+00:00",
+   "id": "07d95a151a1b",
+   "requested_at": "2026-10-04T20:02:36+00:00",
+   "result": "succeeded",
+   "result_detail": "revision 2 -> 3; rollback_applied: intended template observed; application health not assessed",
+   "run_id": "bb06afc13c9a41e4a629b94d0549b8e6",
+   "target": "andyur-action-f90d9ece715a8c7a/checkout-service",
+   "tool": "rollback_deployment"
+  }
+ },
+ "approval_required": {
+  "after": {
+   "generation": 5,
+   "image": "registry.k8s.io/pause:3.9",
+   "revision": "5",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "image": "registry.k8s.io/pause:3.9",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  },
+  "approved": {
+   "approved_at": "2026-10-04T20:02:39+00:00",
+   "approved_by": "alice",
+   "approved_by_asserted_by": "operator_api",
+   "decided_at": "2026-10-04T20:02:39+00:00",
+   "decision": "allowed",
+   "decision_reason": "approved",
+   "finished_at": "2026-10-04T20:02:40+00:00",
+   "id": "7eef76f8d59b",
+   "requested_at": "2026-10-04T20:02:37+00:00",
+   "result": "succeeded",
+   "result_detail": "revision 4 -> 5; rollback_applied: intended template observed; application health not assessed",
+   "run_id": "20b879f386054225bf348e6ec6ebc9f0",
+   "target": "andyur-action-f90d9ece715a8c7a/checkout-service",
+   "tool": "rollback_deployment"
+  },
+  "before": {
+   "generation": 4,
+   "image": "registry.k8s.io/pause:3.10",
+   "revision": "4",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout",
+      "bad-release": "true"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "env": [
+        {
+         "name": "BAD_RELEASE",
+         "value": "true"
+        }
+       ],
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      },
+      {
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "bad-sidecar",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "serviceAccount": "bad-release-account",
+     "serviceAccountName": "bad-release-account",
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  },
+  "cluster_unchanged_while_waiting": true,
+  "rebroken": {
+   "generation": 4,
+   "image": "registry.k8s.io/pause:3.10",
+   "revision": "4",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout",
+      "bad-release": "true"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "env": [
+        {
+         "name": "BAD_RELEASE",
+         "value": "true"
+        }
+       ],
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      },
+      {
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "bad-sidecar",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "serviceAccount": "bad-release-account",
+     "serviceAccountName": "bad-release-account",
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  },
+  "row": {
+   "approved_at": null,
+   "approved_by": null,
+   "approved_by_asserted_by": null,
+   "decided_at": "2026-10-04T20:02:37+00:00",
+   "decision": "approval_required",
+   "decision_reason": "approval_policy",
+   "finished_at": null,
+   "id": "7eef76f8d59b",
+   "requested_at": "2026-10-04T20:02:37+00:00",
+   "result": null,
+   "result_detail": null,
+   "run_id": "20b879f386054225bf348e6ec6ebc9f0",
+   "target": "andyur-action-f90d9ece715a8c7a/checkout-service",
+   "tool": "rollback_deployment"
+  },
+  "while_waiting": {
+   "generation": 4,
+   "image": "registry.k8s.io/pause:3.10",
+   "revision": "4",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout",
+      "bad-release": "true"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "env": [
+        {
+         "name": "BAD_RELEASE",
+         "value": "true"
+        }
+       ],
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      },
+      {
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "bad-sidecar",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "serviceAccount": "bad-release-account",
+     "serviceAccountName": "bad-release-account",
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  }
+ },
+ "atomic_preconditions": {
+  "resourceVersion": {
+   "status": 422,
+   "unchanged": true
+  },
+  "uid": {
+   "status": 422,
+   "unchanged": true
+  }
+ },
+ "cancelled_approval": {
+  "cluster_unchanged": true,
+  "row": {
+   "approved_at": null,
+   "approved_by": null,
+   "approved_by_asserted_by": null,
+   "decided_at": "2026-10-04T20:02:40+00:00",
+   "decision": "denied",
+   "decision_reason": "run_inactive",
+   "finished_at": "2026-10-04T20:02:40+00:00",
+   "id": "038b3a27c452",
+   "requested_at": "2026-10-04T20:02:40+00:00",
+   "result": "not_attempted",
+   "result_detail": null,
+   "run_id": "ba0f822969f144d99b3e8f8be5b5d257",
+   "target": "andyur-action-f90d9ece715a8c7a/checkout-service",
+   "tool": "rollback_deployment"
+  }
+ },
+ "cluster_version": "v1.29.5+k3s1",
+ "concurrent_release": {
+  "after": {
+   "generation": 8,
+   "image": "registry.k8s.io/pause:3.9",
+   "revision": "8",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout",
+      "concurrent-release": "true"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "image": "registry.k8s.io/pause:3.9",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  },
+  "row": {
+   "approved_at": null,
+   "approved_by": null,
+   "approved_by_asserted_by": null,
+   "decided_at": "2026-10-04T20:02:41+00:00",
+   "decision": "allowed",
+   "decision_reason": "write_authorized",
+   "finished_at": "2026-10-04T20:02:41+00:00",
+   "id": "61fe5699771e",
+   "requested_at": "2026-10-04T20:02:41+00:00",
+   "result": "failed",
+   "result_detail": "rollback_target_changed: after 60s observed revision 6; the intended deployment did not roll back",
+   "run_id": "c6facd9c8e3749eb8820bf69f503e6b2",
+   "target": "andyur-action-f90d9ece715a8c7a/checkout-service",
+   "tool": "rollback_deployment"
+  }
+ },
+ "denied": {
+  "after": {
+   "generation": 2,
+   "image": "registry.k8s.io/pause:3.10",
+   "revision": "2",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout",
+      "bad-release": "true"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "env": [
+        {
+         "name": "BAD_RELEASE",
+         "value": "true"
+        }
+       ],
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      },
+      {
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "bad-sidecar",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "serviceAccount": "bad-release-account",
+     "serviceAccountName": "bad-release-account",
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  },
+  "before": {
+   "generation": 2,
+   "image": "registry.k8s.io/pause:3.10",
+   "revision": "2",
+   "template": {
+    "metadata": {
+     "labels": {
+      "app": "checkout",
+      "bad-release": "true"
+     }
+    },
+    "spec": {
+     "containers": [
+      {
+       "env": [
+        {
+         "name": "BAD_RELEASE",
+         "value": "true"
+        }
+       ],
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "app",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      },
+      {
+       "image": "registry.k8s.io/pause:3.10",
+       "imagePullPolicy": "IfNotPresent",
+       "name": "bad-sidecar",
+       "resources": {},
+       "terminationMessagePath": "/dev/termination-log",
+       "terminationMessagePolicy": "File"
+      }
+     ],
+     "dnsPolicy": "ClusterFirst",
+     "restartPolicy": "Always",
+     "schedulerName": "default-scheduler",
+     "securityContext": {},
+     "serviceAccount": "bad-release-account",
+     "serviceAccountName": "bad-release-account",
+     "terminationGracePeriodSeconds": 0
+    }
+   },
+   "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+  },
+  "cluster_unchanged": true,
+  "row": {
+   "approved_at": null,
+   "approved_by": null,
+   "approved_by_asserted_by": null,
+   "decided_at": "2026-10-04T20:02:34+00:00",
+   "decision": "denied",
+   "decision_reason": "no_write_authority",
+   "finished_at": null,
+   "id": "3ece9f83224e",
+   "requested_at": "2026-10-04T20:02:34+00:00",
+   "result": "not_attempted",
+   "result_detail": null,
+   "run_id": "a69e5448aafb4bd7949bb828da4ff350",
+   "target": "andyur-action-f90d9ece715a8c7a/checkout-service",
+   "tool": "rollback_deployment"
+  }
+ },
+ "executed_source_sha256": {
+  "andyur/actions.py": "f18f1db55ea511a3f54c0559d785ec84743df531032c14f29bcc22080885b2b7",
+  "andyur/db.py": "82d93ace6c424b32eb95874b2b93707ce65905107f50e40f47840788562eba15",
+  "andyur/observability.py": "c5ffbc33ccbe79bc6ec97dbbde2310d5c835423217a1cdb4b2d353f1dfb17983",
+  "andyur/rollback.py": "ccb50055ce47793ea5ccee2e7803d965947643ba39f952a6e2d959ad66150afe",
+  "andyur/server/actionrequests.py": "b0d022816c77072a9511779f7818f77a7408e5cf74f81ea63117d14da44de283",
+  "andyur/server/kubernetes_deployments.py": "39ba20989c4aae1000d79b8ff0fa70267bb46c150eab878eef2eafdcacabe7ee",
+  "andyur/server/pdp.py": "929f7b66a6c66035da1ee37cb57a8d8d44b2420d6fb2e1460f55f76606f78254",
+  "andyur/server/runtoken.py": "25e7de11cf9e4d802535576defa74ac5eb2e8e7ceefbfa881cefebca79c25c75",
+  "infra/kubernetes/action_gate_resources.py": "1becd83a699172082ade4a912c69a47df4148e9f8d4c8fbf842600cb6bee6997",
+  "infra/kubernetes/verify-consequential-action.py": "36be728f957869effba52640145d1fb369f5aabbbf34dde1ba3b72693af64b9e"
+ },
+ "failures": [],
+ "finished_at_epoch": 1791144166.688261,
+ "gate": "consequential-action",
+ "host": "macOS-14.8.3-arm64-arm-64bit",
+ "images": {
+  "bad": "registry.k8s.io/pause:3.10",
+  "good": "registry.k8s.io/pause:3.9"
+ },
+ "incident_state": {
+  "generation": 2,
+  "image": "registry.k8s.io/pause:3.10",
+  "revision": "2",
+  "template": {
+   "metadata": {
+    "labels": {
+     "app": "checkout",
+     "bad-release": "true"
+    }
+   },
+   "spec": {
+    "containers": [
+     {
+      "env": [
+       {
+        "name": "BAD_RELEASE",
+        "value": "true"
+       }
+      ],
+      "image": "registry.k8s.io/pause:3.10",
+      "imagePullPolicy": "IfNotPresent",
+      "name": "app",
+      "resources": {},
+      "terminationMessagePath": "/dev/termination-log",
+      "terminationMessagePolicy": "File"
+     },
+     {
+      "image": "registry.k8s.io/pause:3.10",
+      "imagePullPolicy": "IfNotPresent",
+      "name": "bad-sidecar",
+      "resources": {},
+      "terminationMessagePath": "/dev/termination-log",
+      "terminationMessagePolicy": "File"
+     }
+    ],
+    "dnsPolicy": "ClusterFirst",
+    "restartPolicy": "Always",
+    "schedulerName": "default-scheduler",
+    "securityContext": {},
+    "serviceAccount": "bad-release-account",
+    "serviceAccountName": "bad-release-account",
+    "terminationGracePeriodSeconds": 0
+   }
+  },
+  "uid": "d9e40c7d-4ece-45c3-9de2-e060fd90b8dd"
+ },
+ "namespace": "andyur-action-f90d9ece715a8c7a",
+ "not_covered": "the HTTP boundary and its identity checks (auth.require_run, the operator gate on approval): they need SPIRE and the containerised control plane, and are covered in-suite against the real ASGI app in tests/test_lane_a_action_api.py",
+ "ok": true,
+ "otel": {
+  "decisions_on_spans": [
+   "allowed",
+   "approval_required",
+   "denied"
+  ],
+  "jaeger": "http://localhost:16686",
+  "rollback_reasons": [
+   "rollback_applied",
+   "rollback_target_changed"
+  ],
+  "span_count": 12,
+  "span_names": [
+   "action.approve",
+   "action.decide",
+   "action.perform",
+   "gate consequential-action",
+   "kubernetes.cleanup"
+  ],
+  "trace_id": "8ca8964a325dce80e2b4e0bddbeca83f"
+ },
+ "owned_cleanup_complete": true,
+ "source_sha256": {
+  "andyur/actions.py": "f18f1db55ea511a3f54c0559d785ec84743df531032c14f29bcc22080885b2b7",
+  "andyur/db.py": "82d93ace6c424b32eb95874b2b93707ce65905107f50e40f47840788562eba15",
+  "andyur/observability.py": "c5ffbc33ccbe79bc6ec97dbbde2310d5c835423217a1cdb4b2d353f1dfb17983",
+  "andyur/rollback.py": "ccb50055ce47793ea5ccee2e7803d965947643ba39f952a6e2d959ad66150afe",
+  "andyur/server/actionrequests.py": "b0d022816c77072a9511779f7818f77a7408e5cf74f81ea63117d14da44de283",
+  "andyur/server/kubernetes_deployments.py": "39ba20989c4aae1000d79b8ff0fa70267bb46c150eab878eef2eafdcacabe7ee",
+  "andyur/server/pdp.py": "929f7b66a6c66035da1ee37cb57a8d8d44b2420d6fb2e1460f55f76606f78254",
+  "andyur/server/runtoken.py": "25e7de11cf9e4d802535576defa74ac5eb2e8e7ceefbfa881cefebca79c25c75",
+  "infra/kubernetes/action_gate_resources.py": "1becd83a699172082ade4a912c69a47df4148e9f8d4c8fbf842600cb6bee6997",
+  "infra/kubernetes/verify-consequential-action.py": "36be728f957869effba52640145d1fb369f5aabbbf34dde1ba3b72693af64b9e"
+ },
+ "started_at_epoch": 1791144152.658976
+}

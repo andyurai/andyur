@@ -1,0 +1,161 @@
+/* The console's stylesheet. Tokens follow the Andyur brand system (navy
+   ground, blue for the one action, teal for emphasis; Sora display, Manrope
+   body, JetBrains Mono code, self-hosted so a page view makes no third-party
+   request). Light theme follows the system preference. */
+/* The ranges are the wght axes the shipped variable fonts declare (read from
+   their fvar tables, not from a foundry page): a range wider than the file's
+   makes the browser synthesise a weight it was never asked to. All three are
+   SIL OFL 1.1; the licence ships beside them in fonts/LICENSE-OFL.txt. */
+@font-face{font-family:"Sora";src:url(/fonts/sora.woff2) format("woff2");font-weight:400 800;font-display:swap}
+@font-face{font-family:"Manrope";src:url(/fonts/manrope.woff2) format("woff2");font-weight:200 800;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jetbrains-mono.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  /* Form controls, scrollbars and the canvas behind the page follow the theme
+     the tokens below describe; without this they stay in the browser default. */
+  color-scheme:dark;
+  --bg:#0B1226; --panel:#121A33; --panel2:#182242; --ink:#E8ECF5; --muted:#9AA3B8;
+  --line:#243059; --accent:#246AFB; --accent-ink:#fff; --teal:#54C2D0;
+  --ok:#54C2D0; --warn:#E0A43F; --danger:#E2685E; --chip:#182242;
+  --run:#54C2D0; --queued:#E0A43F; --idle:#9AA3B8; --paused:#E2685E;
+  --code-bg:#0A0F22; --code-ink:#C9D2E8;
+  /* THE FLOW GRAPH'S OWN SURFACE. It draws INSIDE a --panel card, so it cannot
+     reuse --panel for its node fill (1.00:1 against its own ground -- the boxes
+     were the same colour as the card) or --line for its strokes (1.34:1, where
+     WCAG 1.4.11 asks 3:1 for the boundary of a UI component). In dark mode the
+     result was floating text with no visible boxes or edges at all. */
+  --flow-node:#223059; --flow-node2:#2A3A69; --flow-stroke:#6B7CB0;
+  --display:"Sora",system-ui,sans-serif; --body:"Manrope",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+/* Every status colour is redefined for light, not only the ones that looked
+   wrong: the dark palette's amber and red sit at 1.96:1 and 2.93:1 on the
+   light chip, under WCAG 1.4.3's 4.5:1 for the small bold text in a pill.
+   These are measured against --chip #EEF2F8 (the pill ground) and hold on
+   --bg too: teal 5.4:1, amber 5.3:1, red 5.8:1, idle 5.3:1. */
+@media (prefers-color-scheme: light){
+  :root{
+    color-scheme:light;
+    --bg:#F7F9FC; --panel:#FFFFFF; --panel2:#EEF2F8; --ink:#0B1226; --muted:#5B6478;
+    --line:#DCE2EE; --accent:#1F5FE0; --teal:#0F6B77; --ok:#0F6B77; --chip:#EEF2F8;
+    --warn:#8A5A00; --danger:#B3261E;
+    --run:#0F6B77; --queued:#8A5A00; --idle:#5B6478; --paused:#B3261E;
+    --code-bg:#0A0F22; --code-ink:#C9D2E8;
+    /* Light needs its own: the dark stroke would vanish on white. */
+    --flow-node:#EEF2F8; --flow-node2:#E4EAF4; --flow-stroke:#7A88A8;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 var(--body);background:var(--bg);color:var(--ink)}
+a{color:var(--teal)}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);
+       background:var(--panel);position:sticky;top:0;z-index:5}
+header h1{font:600 16px/1 var(--display);margin:0;letter-spacing:-0.02em}
+.meta{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;margin-left:8px}
+.tab{padding:6px 14px;border-radius:7px;color:var(--muted);font-weight:500;text-decoration:none}
+.tab.active{background:var(--accent);color:var(--accent-ink)}
+.spacer{flex:1}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);
+       color:var(--ink);padding:5px 11px;border-radius:7px}
+button:hover{border-color:var(--teal)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger:hover{border-color:var(--danger);color:var(--danger)}
+button.close{padding:2px 9px}
+/* `hidden` wins over any later `display` a rule might add to a card or tab. */
+[hidden]{display:none !important}
+.wrap{display:grid;gap:16px;padding:16px 20px;max-width:1280px;margin:0 auto}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px}
+.cols-wide{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.cols,.cols-wide{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+         margin:0;padding:12px 14px;border-bottom:1px solid var(--line);
+         display:flex;align-items:center;gap:8px;font-weight:600}
+.card .body{padding:14px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--chip)}
+tr.row.sel td{background:var(--chip)}
+/* The anchor carries the semantics and the focus ring; the row carries the
+   look, so the link must not repaint the cell it sits in. */
+tr.row td a{color:inherit;text-decoration:none}
+tr.row:hover td a,tr.row td a:focus-visible{text-decoration:underline}
+td.name{font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--chip)}
+.pill.running{color:var(--run)} .pill.queued,.pill.pending{color:var(--queued)}
+.pill.idle,.pill.cancelled{color:var(--idle)} .pill.paused,.pill.failed{color:var(--paused)}
+.pill.done{color:var(--ok)}
+.muted{color:var(--muted)}
+/* HOW a subject was established, beside the subject. `.weak` is deliberately
+   the warn colour rather than the muted one: an asserted identity is not a
+   footnote to a verified one, it is a weaker claim, and the surface should not
+   let the two read the same at a glance. */
+.prov{font-size:11px;color:var(--muted)}
+.prov.weak{color:var(--warn)}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.actions button{padding:3px 9px;font-size:12.5px}
+.k{color:var(--muted);font-size:11px;margin-top:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.k:first-child{margin-top:0}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.kv .k{margin-top:0}
+.kv .v{margin-top:2px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:10px 12px;overflow:auto;margin:0;
+    font:12px/1.55 var(--mono);white-space:pre-wrap}
+.mono{font:12px var(--mono)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{padding:2px 9px;border-radius:999px;background:var(--chip);font-size:12px;
+      border:1px solid transparent;color:inherit;font-family:inherit;line-height:inherit}
+button.chip{cursor:pointer}
+.chip.on{border-color:var(--teal)}
+form.create,form.launch{display:grid;gap:8px}
+label{font-size:12px;color:var(--muted)}
+input,textarea,select{width:100%;font:inherit;padding:7px 9px;border:1px solid var(--line);
+      border-radius:7px;background:var(--bg);color:var(--ink)}
+textarea{font:12px/1.5 var(--mono);min-height:88px}
+.row2{display:flex;gap:10px}
+.row2>div{flex:1}
+.filter{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center}
+.filter select{width:auto;padding:3px 7px}
+.filter label{font-size:12px}
+.empty{padding:26px 14px;text-align:center;color:var(--muted)}
+.blocked{padding:26px 14px;display:grid;gap:10px}
+.note{border:1px solid var(--line);border-left:3px solid var(--teal);background:var(--panel2);padding:9px 13px;border-radius:8px;font-size:13px}
+.note.err{border-left-color:var(--danger)} .note.warn{border-left-color:var(--warn)}
+#toast{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:20;max-width:380px}
+#toast .t{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+   padding:9px 13px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#toast .t.err{border-left-color:var(--danger)} #toast .t.ok{border-left-color:var(--ok)}
+.turns{display:flex;flex-direction:column;gap:12px;padding:14px;max-height:60vh;overflow:auto}
+.turn .k{margin-top:0}
+.cursor{display:inline-block;width:7px;height:14px;background:var(--teal);vertical-align:middle;margin-left:2px}
+.sendbox{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+.flow svg{max-width:100%;height:auto;display:block}
+.flow .node{cursor:pointer}
+.flow .node.sel rect,.flow .node.sel polygon{stroke:var(--teal);stroke-width:2}
+/* SVG 2 has no var() in a presentation ATTRIBUTE; browsers happen to resolve
+   it, which is not the same as it being defined. Every colour the graph uses
+   is a class here instead. */
+.flow .edge{fill:none;stroke:var(--flow-stroke);stroke-width:1.5}
+.flow .node.sel .edge{stroke:var(--teal)}
+.flow .link{stroke:var(--flow-stroke)}
+.flow .badge{fill:var(--flow-node2);stroke:var(--flow-stroke)}
+.flow .box{fill:var(--flow-node);stroke:var(--flow-stroke)}
+.flow .hex,.flow .tool{fill:var(--flow-node2);stroke:var(--flow-stroke)}
+.flow .chip-r{fill:var(--chip)}
+.flow .elided{fill:none;stroke:var(--muted);stroke-dasharray:5 4}
+.flow .n-title{font:600 13px var(--display);fill:var(--ink)}
+.flow .n-sub{font:11px var(--mono);fill:var(--muted)}
+.flow .n-lab{font:11px var(--mono);fill:var(--ink)}
+.flow .badge-t{font:10.5px var(--body);fill:var(--muted)}
+.flow .chip-t{font:600 10.5px var(--body);fill:var(--teal)}
+.flow .chip-t.warn{fill:var(--queued)}
+.flow .dim{fill:var(--muted)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.lifecycle{margin-top:6px}
+.mb{margin-bottom:16px} .mt8{margin-top:8px} .mt10{margin-top:10px} .pt0{padding-top:0}
+.crumbs{font-size:12px;color:var(--muted)}
+.crumbs a{color:var(--teal);text-decoration:none}
+.pb0{padding-bottom:0}

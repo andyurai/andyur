@@ -1,0 +1,244 @@
+<title>adsupport: dual-control eval architecture</title>
+<style>
+  :root{
+    --bg:#eef1f6; --surface:#fff; --surface2:#f4f6fb; --ink:#151a23; --muted:#586074;
+    --faint:#7b8397; --line:#dde2ec; --line2:#cfd6e4;
+    --harness:#1f8a5b; --harness-soft:#e7f5ee; --harness-line:#b7e0cc;
+    --sut:#4b57d6; --sut-soft:#eaecfb; --sut-line:#c3c9f4;
+    --world:#a8620d; --world-soft:#fbf1e3; --world-line:#eed3ac;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 1px 2px rgba(16,22,38,.05),0 10px 26px -14px rgba(16,22,38,.18);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0b0e14; --surface:#141922; --surface2:#0f141c; --ink:#e6eaf2; --muted:#9aa3b6;
+    --faint:#6f7789; --line:#232a37; --line2:#2e3646;
+    --harness:#54cf94; --harness-soft:#122820; --harness-line:#295040;
+    --sut:#8b95ff; --sut-soft:#181f38; --sut-line:#39406b;
+    --world:#e0a860; --world-soft:#26200f; --world-line:#4a361b;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 32px -16px rgba(0,0,0,.7);
+  }}
+  :root[data-theme="dark"]{--bg:#0b0e14;--surface:#141922;--surface2:#0f141c;--ink:#e6eaf2;--muted:#9aa3b6;--faint:#6f7789;--line:#232a37;--line2:#2e3646;--harness:#54cf94;--harness-soft:#122820;--harness-line:#295040;--sut:#8b95ff;--sut-soft:#181f38;--sut-line:#39406b;--world:#e0a860;--world-soft:#26200f;--world-line:#4a361b;--shadow:0 1px 2px rgba(0,0,0,.4),0 14px 32px -16px rgba(0,0,0,.7);}
+  :root[data-theme="light"]{--bg:#eef1f6;--surface:#fff;--surface2:#f4f6fb;--ink:#151a23;--muted:#586074;--faint:#7b8397;--line:#dde2ec;--line2:#cfd6e4;--harness:#1f8a5b;--harness-soft:#e7f5ee;--harness-line:#b7e0cc;--sut:#4b57d6;--sut-soft:#eaecfb;--sut-line:#c3c9f4;--world:#a8620d;--world-soft:#fbf1e3;--world-line:#eed3ac;}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 22px}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:.05em .34em;color:var(--ink)}
+  header{padding:48px 0 20px;border-bottom:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--sut);font-weight:600}
+  h1{font-size:clamp(26px,4vw,36px);margin:.3em 0 .15em;font-weight:800;letter-spacing:-.02em}
+  .lede{color:var(--muted);max-width:70ch;margin:.3em 0 0}
+  section{padding:30px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:clamp(19px,2.6vw,23px);font-weight:750;margin:0 0 .5em;letter-spacing:-.01em}
+  h2 .n{font-family:var(--mono);font-size:.6em;color:var(--sut);margin-right:.5em}
+  p{max-width:74ch;color:var(--muted)}
+  p b,li b{color:var(--ink)}
+
+  /* --- the hand-built zone map --- */
+  .map{display:grid;grid-template-columns:1.15fr 1.15fr .8fr;gap:14px;margin:14px 0 4px;align-items:start}
+  @media (max-width:820px){.map{grid-template-columns:1fr}}
+  .zone{border:1.5px solid var(--zc);background:var(--zs);border-radius:14px;padding:12px 12px 14px}
+  .zone.h{--zc:var(--harness);--zs:var(--harness-soft)}
+  .zone.s{--zc:var(--sut);--zs:var(--sut-soft)}
+  .zone.w{--zc:var(--world);--zs:var(--world-soft)}
+  .zh{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--zc);margin:2px 2px 10px}
+  .box{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin:8px 0;box-shadow:var(--shadow)}
+  .box b{display:block;font-size:13.5px;font-weight:680;letter-spacing:-.01em}
+  .box .fn{font-family:var(--mono);font-size:11px;color:var(--zc);font-weight:600;margin-bottom:2px;display:block}
+  .box small{display:block;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .zone.w .box{min-height:118px}
+
+  /* --- connections list --- */
+  .conns{border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden;margin:16px 0 0}
+  .conn{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);font-size:13px}
+  .conn:last-child{border-bottom:none}
+  .conn .from,.conn .to{color:var(--ink);font-weight:600}
+  .conn .from{text-align:right}
+  .conn .via{font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap;padding:2px 8px;border:1px solid var(--line2);border-radius:999px}
+  .conn.dc{background:var(--world-soft)}
+  .conn.dc .via{color:var(--world);border-color:var(--world-line);font-weight:700}
+  .conn .arw{color:var(--faint);font-family:var(--mono)}
+
+  .key{background:var(--world-soft);border:1px solid var(--world-line);border-radius:11px;padding:12px 16px;margin:16px 0 0}
+  .key b{color:var(--ink)}
+  .clabel{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:16px 0 2px;letter-spacing:.05em;text-transform:uppercase}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:14px 0}
+  .card{border:1px solid var(--line);border-left:4px solid var(--z);border-radius:11px;background:var(--surface);padding:13px 15px;box-shadow:var(--shadow)}
+  .card.h{--z:var(--harness)} .card.s{--z:var(--sut)} .card.w{--z:var(--world)}
+  .card h3{margin:0 0 1px;font-size:15px;font-weight:730}
+  .card .file{font-family:var(--mono);font-size:12px;color:var(--z);font-weight:600}
+  .card .role{font-size:13px;color:var(--muted);margin:5px 0 7px}
+  .card ul{margin:0;padding-left:1.05em}
+  .card li{font-size:12.8px;color:var(--muted);margin:2px 0}
+  .card li b{color:var(--ink);font-weight:620}
+
+  ol.steps{counter-reset:s;list-style:none;padding-left:0;margin:14px 0}
+  ol.steps>li{counter-increment:s;position:relative;padding:9px 12px 9px 2.6rem;border:1px solid var(--line);border-radius:9px;background:var(--surface);margin:7px 0}
+  ol.steps>li::before{content:counter(s);position:absolute;left:11px;top:9px;width:1.5rem;height:1.5rem;border-radius:7px;background:var(--sut-soft);border:1px solid var(--sut-line);color:var(--sut);font-family:var(--mono);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  ol.steps b{font-size:13.5px}
+  .tag{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  footer{padding:22px 0 60px;color:var(--faint);font-size:12.5px}
+</style>
+
+<header><div class="wrap">
+  <div class="kicker">demos/adsupport · architecture</div>
+  <h1>Dual-control support eval: the components</h1>
+  <p class="lede">A standalone customer and a standalone simulated app surround the real
+    thing under test: an Andyur conversational agent. Both the agent and the customer act on
+    one shared world, and a ticket only closes if they coordinate.</p>
+</div></header>
+
+<main class="wrap">
+
+<section id="map">
+  <h2><span class="n">1</span>The three zones</h2>
+  <div class="map">
+    <div class="zone h">
+      <div class="zh">Standalone test harness</div>
+      <div class="box"><span class="fn">run_andyur.py</span><b>Orchestrator + scorer</b>
+        <small>runs an episode, references the agent by name, scores from the app</small></div>
+      <div class="box"><span class="fn">agent.py · scenarios.py</span><b>Customer simulator</b>
+        <small>an LLM in-character: persona + hidden goal, and its own advertiser tools</small></div>
+      <div class="box"><span class="fn">scenarios.py</span><b>Scenarios</b>
+        <small>persona, hidden goal, seed state, and the goal predicate</small></div>
+      <div class="box"><span class="fn">provision.py · agent/instructions.md</span><b>SUT definition</b>
+        <small>who the agent is: its policy (a file) + provisioning</small></div>
+    </div>
+
+    <div class="zone s">
+      <div class="zh">System under test · Andyur</div>
+      <div class="box"><span class="fn">Andyur server + daemon</span><b>Conversation API</b>
+        <small>/trigger, /turn (in), /events (out)</small></div>
+      <div class="box"><span class="fn">Andyur conversation</span><b>The support agent (SUT)</b>
+        <small>one live session, grounded on its instructions.md + mcp.json</small></div>
+      <div class="box"><span class="fn">mcp_support.py</span><b>Support MCP toolserver</b>
+        <small>9 tools, the AGENT surface only, no advertiser tool exists here</small></div>
+    </div>
+
+    <div class="zone w">
+      <div class="zh">Shared world</div>
+      <div class="box"><span class="fn">app_server.py · app.py</span><b>The simulated app</b>
+        <small>AdsPlatform state (accounts, campaigns, ads, charges) + business rules;
+          <b>dispatch()</b> enforces each actor's authority; HTTP: /seed /call /snapshot /goal.
+          Both sides mutate this one state; success is read here.</small></div>
+    </div>
+  </div>
+
+  <div class="clabel">How they connect</div>
+  <div class="conns">
+    <div class="conn"><span class="from">SUT definition</span><span class="arw">──▶</span><span class="to">Conversation API</span><span class="via" style="grid-column:2;grid-row:1">provision</span></div>
+    <div class="conn"><span class="from">Orchestrator</span><span class="via">POST /turn</span><span class="to">Conversation API</span></div>
+    <div class="conn"><span class="from">Conversation API</span><span class="via">GET /events</span><span class="to">Orchestrator</span></div>
+    <div class="conn"><span class="from">The support agent</span><span class="via">mcp__adsupport__*</span><span class="to">MCP toolserver</span></div>
+    <div class="conn dc"><span class="from">MCP toolserver</span><span class="via">agent API · actor=agent</span><span class="to">Shared app</span></div>
+    <div class="conn dc"><span class="from">Customer sim</span><span class="via">advertiser API · actor=advertiser</span><span class="to">Shared app</span></div>
+    <div class="conn"><span class="from">Orchestrator</span><span class="via">GET /goal /snapshot</span><span class="to">Shared app</span></div>
+  </div>
+
+  <div class="key">
+    <b>The two highlighted rows are the dual control.</b> The agent acts on the app as
+    <code>actor=agent</code> (through its MCP tools); the customer acts on the SAME app as
+    <code>actor=advertiser</code>. Their tool surfaces are disjoint, so neither can do the
+    other's part, and success is read from the app's <code>/goal</code>, not from what either
+    side claims.
+  </div>
+</section>
+
+<section id="pieces">
+  <h2><span class="n">2</span>What is in each component</h2>
+  <div class="cards">
+    <div class="card h">
+      <h3>Orchestrator + scorer</h3><div class="file">run_andyur.py</div>
+      <div class="role">Runs one episode and scores it. Defines no agent, policy, or tools.</div>
+      <ul><li>provisions the SUT, triggers a conversation</li>
+        <li>turn loop: send <b>/turn</b>, drain <b>/events</b>, let the customer act</li>
+        <li>stall guard (snapshot-diff) + scoring from <b>/goal</b></li>
+        <li><code>--transcript</code> prints the full session</li></ul>
+    </div>
+    <div class="card h">
+      <h3>Customer simulator</h3><div class="file">agent.py · scenarios.py</div>
+      <div class="role">A τ²-style user: an LLM in-character with its own tools on the app.</div>
+      <ul><li>persona + hidden goal, temperature 0.8</li>
+        <li><b>advertiser tools</b> only (update payment, edit creative, resubmit, resume)</li>
+        <li>drives the chat and <b>actually acts</b> on the app service</li></ul>
+    </div>
+    <div class="card h">
+      <h3>Scenarios</h3><div class="file">scenarios.py</div>
+      <div class="role">The test cases. Each seeds a broken world and defines success.</div>
+      <ul><li>persona, hidden goal, <b>seed</b> (build the app state)</li>
+        <li><b>goal predicate</b> over the final app state</li>
+        <li>a unit test proves each is unsolvable by one party alone</li></ul>
+    </div>
+    <div class="card h">
+      <h3>SUT definition + provisioning</h3><div class="file">agent/instructions.md · provision.py</div>
+      <div class="role">Who the agent IS, authored separately from the harness.</div>
+      <ul><li><b>instructions.md</b>: the standing policy (a file, not code)</li>
+        <li><b>provision.py</b>: creates the agent, writes its mind, generates mcp.json</li>
+        <li>identity (policy, tools) vs deployment (paths, url) kept apart</li></ul>
+    </div>
+    <div class="card s">
+      <h3>Andyur conversation (the SUT)</h3><div class="file">Andyur</div>
+      <div class="role">A real persistent Andyur conversational agent. The thing being tested.</div>
+      <ul><li>grounded on its <b>instructions.md</b> policy</li>
+        <li>one live session across all turns</li>
+        <li>calls its MCP tools to act; streams replies as events</li></ul>
+    </div>
+    <div class="card s">
+      <h3>Support MCP toolserver</h3><div class="file">mcp_support.py</div>
+      <div class="role">The agent's tools, loaded via the agent's mcp.json.</div>
+      <ul><li>FastMCP server: 4 reads + 5 admin actions</li>
+        <li><b>agent surface only</b>, no advertiser tool</li>
+        <li>each tool calls the app as <code>actor=agent</code></li></ul>
+    </div>
+    <div class="card s">
+      <h3>Andyur control plane</h3><div class="file">server + daemon</div>
+      <div class="role">Runs the agent; the harness talks to it over HTTP.</div>
+      <ul><li><b>/trigger</b> a conversation, <b>/turn</b> in, <b>/events</b> out</li>
+        <li>daemon launches the session; runner loads the agent's mcp.json</li></ul>
+    </div>
+    <div class="card w">
+      <h3>The simulated app (shared world)</h3><div class="file">app.py · app_server.py</div>
+      <div class="role">One authoritative state both sides mutate. Source of truth for success.</div>
+      <ul><li><b>AdsPlatform</b>: accounts, campaigns, ads, charges + rules</li>
+        <li><b>dispatch()</b>: enforces the actor's authority</li>
+        <li>HTTP: <b>/seed /call /snapshot /goal</b></li></ul>
+    </div>
+  </div>
+</section>
+
+<section id="lifecycle">
+  <h2><span class="n">3</span>One turn, end to end</h2>
+  <p>How a single exchange flows through the components. The dual control is steps 3 and 5.</p>
+  <ol class="steps">
+    <li><b>Customer sim produces a message</b> <span class="tag">in-character, from persona + goal</span></li>
+    <li><b>Harness sends it as a turn</b> <span class="tag">POST /runs/&lt;id&gt;/turn → Andyur</span></li>
+    <li><b>The Andyur agent diagnoses and acts</b> <span class="tag">mcp__adsupport__* → MCP server → app (actor=agent)</span></li>
+    <li><b>Agent's reply streams back</b> <span class="tag">GET /events → harness drains chunks</span></li>
+    <li><b>Customer sim reacts and acts</b> <span class="tag">its advertiser tools on the app (actor=advertiser)</span></li>
+    <li><b>Harness scores</b> <span class="tag">GET /goal; resolved? else loop</span></li>
+  </ol>
+</section>
+
+<section id="why">
+  <h2><span class="n">4</span>Why it is split this way</h2>
+  <p><b>The SUT is a real Andyur agent, not a mock.</b> You test the thing you ship, not a
+    stand-in. The app and the customer are the harness around it.</p>
+  <p><b>The world is a service, not an in-process object.</b> Two separate processes (the
+    Andyur agent and the customer sim) must share one authoritative state, so the world has
+    to be a service both reach. It is also the faithful τ²-bench shape.</p>
+  <p><b>The agent's identity is authored, not coded.</b> An Andyur agent is a mind
+    (<code>instructions.md</code>) plus a tool manifest (<code>mcp.json</code>). The harness
+    provisions and drives it; it never defines it.</p>
+  <p><b>The authority boundary is enforced twice.</b> The agent has no advertiser tool to
+    call (its tool surface), and the app refuses any cross-surface call anyway
+    (<code>dispatch</code>). The policy guides; the boundary holds regardless.</p>
+</section>
+
+</main>
+
+<footer><div class="wrap">
+  demos/adsupport · dual-control eval in the style of τ²-bench (arXiv 2506.07982). The
+  simulated app is generic (a mock ad platform), not any real product.
+</div></footer>

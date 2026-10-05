@@ -1,0 +1,139 @@
+{
+  "cluster_version": "v1.29.5+k3s1",
+  "controller_identity": "system:serviceaccount:andyur-exec-input-c56e94ff:andyur-worker-gate",
+  "executed_source_sha256": {
+    "andyur/daemon/kubernetes_controller.py": "b03dbe757e75d13c49846180178caeaeace4a71f35b551edfa54ee0c97d91b52",
+    "andyur/execconfig.py": "958e2e39b1c748ab997129898fc3e5f717e18588cb0aa0c115e3b0422e40afd9",
+    "andyur/runinput.py": "72a45bef2e66fe4b0c6bc426d5fb77af77cec4f0246338bc7a8bb66aaa216b69"
+  },
+  "finished_at_epoch": 1790035091.831497,
+  "gate": "exec-input-delivery",
+  "host": "macOS-14.8.3-arm64-arm-64bit",
+  "image": "localhost:5000/andyur-worker@sha256:e548967f786052cc87d80521cb0d8a1ee86742a483c65cb778afd458b41c89f1",
+  "image_id": "docker-pullable://localhost:5000/andyur-worker@sha256:e548967f786052cc87d80521cb0d8a1ee86742a483c65cb778afd458b41c89f1",
+  "modes": {
+    "argv": {
+      "bearer_absent_from_input": true,
+      "byte_identical": true,
+      "delivery": "",
+      "expected_len": 104,
+      "expected_sha256": "6d26f34aede9ff8f40969cee6119e8982d1cfb465dddbf09eb7c1d4c435f3237",
+      "launch_seconds": 1.24,
+      "mode": "argv",
+      "ok": true,
+      "phase": "Succeeded",
+      "reference_survived_verbatim": true,
+      "report": {
+        "B64": "eyJpbmNpZGVudCI6IklOQy00NDcxIiwibm90ZSI6IiR7c2VydmljZXMudG9vbHMubWNwX2hlYWRlcnMuQXV0aG9yaXphdGlvbn0iLCJ1bmljb2RlIjoiw7xuw69jw7hkw6kg4pyTIn0=",
+        "LEN": "104",
+        "SHA": "6d26f34aede9ff8f40969cee6119e8982d1cfb465dddbf09eb7c1d4c435f3237"
+      },
+      "resources_absent": true,
+      "run_id": "4954f51aec4047479708bc09279c6b44"
+    },
+    "file": {
+      "bearer_absent_from_input": true,
+      "byte_identical": true,
+      "delivery": "file",
+      "expected_len": 104,
+      "expected_sha256": "6d26f34aede9ff8f40969cee6119e8982d1cfb465dddbf09eb7c1d4c435f3237",
+      "file_private_to_workload_uid": true,
+      "launch_seconds": 4.38,
+      "mode": "file",
+      "ok": true,
+      "phase": "Succeeded",
+      "reference_survived_verbatim": true,
+      "report": {
+        "B64": "eyJpbmNpZGVudCI6IklOQy00NDcxIiwibm90ZSI6IiR7c2VydmljZXMudG9vbHMubWNwX2hlYWRlcnMuQXV0aG9yaXphdGlvbn0iLCJ1bmljb2RlIjoiw7xuw69jw7hkw6kg4pyTIn0=",
+        "LEN": "104",
+        "MODE": "0o600",
+        "SHA": "6d26f34aede9ff8f40969cee6119e8982d1cfb465dddbf09eb7c1d4c435f3237",
+        "UID": "1001"
+      },
+      "resources_absent": true,
+      "run_id": "3b362742c3ef49e28abe0edcfa4d15ae"
+    },
+    "file_with_templates": {
+      "bearer_absent_from_input": true,
+      "bearer_rendered_into_declared_file": true,
+      "byte_identical": true,
+      "channel_token_absent_from_rendered_file": true,
+      "delivery": "file",
+      "expected_len": 104,
+      "expected_sha256": "6d26f34aede9ff8f40969cee6119e8982d1cfb465dddbf09eb7c1d4c435f3237",
+      "file_private_to_workload_uid": true,
+      "input_path_rendered": true,
+      "launch_seconds": 4.39,
+      "mode": "file",
+      "ok": true,
+      "phase": "Succeeded",
+      "reference_survived_verbatim": true,
+      "rendered_config": "mcp: http://10.42.0.213:8766/mcp\nauth: Bearer mcp-bearer-value-1fc5fb8e49774e0d9c096dae80fac3b9\ninput: /tmp/andyur/input\n",
+      "report": {
+        "B64": "eyJpbmNpZGVudCI6IklOQy00NDcxIiwibm90ZSI6IiR7c2VydmljZXMudG9vbHMubWNwX2hlYWRlcnMuQXV0aG9yaXphdGlvbn0iLCJ1bmljb2RlIjoiw7xuw69jw7hkw6kg4pyTIn0=",
+        "CFG": "bWNwOiBodHRwOi8vMTAuNDIuMC4yMTM6ODc2Ni9tY3AKYXV0aDogQmVhcmVyIG1jcC1iZWFyZXItdmFsdWUtMWZjNWZiOGU0OTc3NGUwZDljMDk2ZGFlODBmYWMzYjkKaW5wdXQ6IC90bXAvYW5keXVyL2lucHV0Cg==",
+        "LEN": "104",
+        "MODE": "0o600",
+        "SHA": "6d26f34aede9ff8f40969cee6119e8982d1cfb465dddbf09eb7c1d4c435f3237",
+        "UID": "1001"
+      },
+      "resources_absent": true,
+      "run_id": "42da82beb1e64daea80d97fb405d6bb8"
+    },
+    "stdin": {
+      "bearer_absent_from_input": true,
+      "byte_identical": true,
+      "delivery": "stdin",
+      "expected_len": 104,
+      "expected_sha256": "6d26f34aede9ff8f40969cee6119e8982d1cfb465dddbf09eb7c1d4c435f3237",
+      "launch_seconds": 4.08,
+      "mode": "stdin",
+      "ok": true,
+      "phase": "Succeeded",
+      "reference_survived_verbatim": true,
+      "report": {
+        "B64": "eyJpbmNpZGVudCI6IklOQy00NDcxIiwibm90ZSI6IiR7c2VydmljZXMudG9vbHMubWNwX2hlYWRlcnMuQXV0aG9yaXphdGlvbn0iLCJ1bmljb2RlIjoiw7xuw69jw7hkw6kg4pyTIn0=",
+        "LEN": "104",
+        "SHA": "6d26f34aede9ff8f40969cee6119e8982d1cfb465dddbf09eb7c1d4c435f3237"
+      },
+      "resources_absent": true,
+      "run_id": "4cd0d13d71e74d8d96b4d0b6780de660"
+    }
+  },
+  "no_delivery_control": {
+    "logs_after_wait": "",
+    "ok": true,
+    "phase_after_wait": "Running",
+    "still_blocked": true
+  },
+  "ok": true,
+  "output_read_rbac": {
+    "granted_read_byte_identical": true,
+    "ok": true,
+    "phase": "Succeeded",
+    "ungranted_read_403": true,
+    "ungranted_read_status": "403"
+  },
+  "rbac": {
+    "controller_ran_as": "system:serviceaccount:andyur-exec-input-c56e94ff:andyur-worker-gate",
+    "create_pods_attach": "yes",
+    "create_pods_exec": "no",
+    "get_pods_attach": "yes",
+    "get_pods_exec": "no",
+    "get_pods_portforward": "no"
+  },
+  "source_sha256": {
+    "andyur/daemon/governed_kubernetes.py": "0ee8ecc96ec87df3123f0b5449ea7486923c73bfe7536a1e8fdf8711eb6daf61",
+    "andyur/daemon/kubernetes_api.py": "bb72974d9f9daf825c48dfa0783f9e842f2cea042266ab9897d60fa70dfc7186",
+    "andyur/daemon/kubernetes_controller.py": "b03dbe757e75d13c49846180178caeaeace4a71f35b551edfa54ee0c97d91b52",
+    "andyur/daemon/kubernetes_manifests.py": "a811c5296bbf02caea11c12b75f0e6f2423c0e09044262ea8d3cd4d4d437b33a",
+    "andyur/execconfig.py": "958e2e39b1c748ab997129898fc3e5f717e18588cb0aa0c115e3b0422e40afd9",
+    "andyur/runinput.py": "72a45bef2e66fe4b0c6bc426d5fb77af77cec4f0246338bc7a8bb66aaa216b69",
+    "infra/kubernetes/bounded_exec.py": "3e30ee8a1813ede78da739c54e76730f53c2aa2c81e17f53d726ddcc1f09cc1a",
+    "infra/kubernetes/run-isolation.yaml": "e82a8fb71cf10899ced38a584ffcc1350450859f8ff27806cf247482d49fc1de",
+    "infra/kubernetes/verify-exec-input.py": "8c604f65930242f70e5b7aa439a34b7243202f821c7129497546b4a7891cca08",
+    "infra/kubernetes/verify-exec-input.sh": "a0d5683084de115525a6fe0ad2d2dacd241940fc042abbefe8234a191c361cba"
+  },
+  "started_at_epoch": 1790034893.850559,
+  "teardown_absent": true
+}

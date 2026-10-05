@@ -1,0 +1,83 @@
+{
+  "gate": "byoa-frameworks",
+  "adr": "adr-008",
+  "started_utc": "2026-08-15T09:24:37Z",
+  "duration_s": 7.4,
+  "frameworks": [
+    {
+      "name": "langgraph",
+      "image": "byoa-langgraph-agent:gate",
+      "image_id": "sha256:1ecc87425994d1ac8e023dee9c34d2806abe835d4b1c4f533e9a6e9da58702e5",
+      "agent_sha256": "287e0a189a8d9fca476170d531ce76c9ebd5a86f0b5e0aba8d8b3cf7398f586f"
+    },
+    {
+      "name": "openai-agents",
+      "image": "byoa-openai-agent:gate",
+      "image_id": "sha256:602fbd7c4c29ef5775d331b0bf53d945e39bc0a51ef084fad06e627bb8532acf",
+      "agent_sha256": "154ce534be9dd6ff9685347d93c6b21a40e2d339fd22a778383252e01faddb12"
+    }
+  ],
+  "checks": [
+    {
+      "check": "F[langgraph] image has no andyur (langgraph imports)",
+      "ok": true,
+      "detail": "import andyur exit=1, import langgraph exit=0"
+    },
+    {
+      "check": "F[langgraph] round trip via its own model+MCP client",
+      "ok": true,
+      "detail": "exit=0 done={'kind': 'done', 'exit': 0, 'error': None} tools=['echo'] results=1 finals=1 stderr='/app/agent.py:102: LangGraphDeprecatedSinceV10: create_react_agent has been moved to `langchain.agents`. Please update your import to `from langchain.agents import create_agent`. Deprecated in LangGraph V1.0 to be removed in V2.0.\\n  agent = create_react_agent(model, tools)\\n'"
+    },
+    {
+      "check": "F[langgraph] canary injected by the proxy, never held",
+      "ok": true,
+      "detail": "gateway saw 2 model call(s)"
+    },
+    {
+      "check": "F[langgraph] MCP tool invoked (observed on the transport)",
+      "ok": true,
+      "detail": "mcp transport saw calls: [('echo', {'text': 'hello from the model'})]"
+    },
+    {
+      "check": "F[langgraph] sent the context's effective model",
+      "ok": true,
+      "detail": "context model='claude-sonnet-4-5', gateway saw ['claude-sonnet-4-5', 'claude-sonnet-4-5']"
+    },
+    {
+      "check": "F[langgraph] canary invisible to the agent",
+      "ok": true,
+      "detail": "canary absent from context, events, agent output"
+    },
+    {
+      "check": "F[openai-agents] image has no andyur (agents imports)",
+      "ok": true,
+      "detail": "import andyur exit=1, import agents exit=0"
+    },
+    {
+      "check": "F[openai-agents] round trip via its own model+MCP client",
+      "ok": true,
+      "detail": "exit=0 done={'kind': 'done', 'exit': 0, 'error': None} tools=['echo'] results=1 finals=1 stderr=''"
+    },
+    {
+      "check": "F[openai-agents] canary injected by the proxy, never held",
+      "ok": true,
+      "detail": "gateway saw 2 model call(s)"
+    },
+    {
+      "check": "F[openai-agents] MCP tool invoked (observed on the transport)",
+      "ok": true,
+      "detail": "mcp transport saw calls: [('echo', {'text': 'hello from the model'})]"
+    },
+    {
+      "check": "F[openai-agents] sent the context's effective model",
+      "ok": true,
+      "detail": "context model='claude-sonnet-4-5', gateway saw ['claude-sonnet-4-5', 'claude-sonnet-4-5']"
+    },
+    {
+      "check": "F[openai-agents] canary invisible to the agent",
+      "ok": true,
+      "detail": "canary absent from context, events, agent output"
+    }
+  ],
+  "ok": true
+}

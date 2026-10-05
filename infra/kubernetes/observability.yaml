@@ -1,0 +1,210 @@
+# The telemetry path for andyur-system: an OpenTelemetry Collector every
+# platform component and every run sidecar exports to (ANDYUR_OTEL_ENDPOINT),
+# and Jaeger v2 as the DEV backend the Collector forwards traces to.
+#
+# Apply with infra/kubernetes/apply-observability.sh: the two ConfigMaps this
+# file mounts (`otel-collector-config`, `andyur-jaeger-config`) are generated
+# from infra/observability/otel-collector.yaml and infra/observability/jaeger.yaml
+# so the configuration has ONE source, validated by
+# infra/observability/verify-config.sh in the same pinned images.
+#
+# TRUST BOUNDARY. OTLP ingest is unauthenticated: anything that can open
+# otel-collector:4318 can write spans into any run's trace. The Collector
+# therefore trusts its NETWORK, and the NetworkPolicies below are what shape
+# that network: ingress from the control-plane components and from the run
+# PROXY pods (the platform's trusted sidecar, `app.kubernetes.io/component:
+# proxy`, in a namespace that passed the isolation probe) -- never from the
+# agent/workload selector, whose rendered policy keeps its egress proxy-only
+# (tests/test_kubernetes_manifests.py pins that; verify-network-policy.sh and
+# verify-exec-tool-call.py probe it live). Jaeger accepts spans only from the
+# Collector and queries only from the operator, which is the vantage point
+# the gates read a trace back from. Both stores are in-memory and bounded.
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: andyur-system
+  labels: {app: otel-collector}
+spec:
+  selector: {app: otel-collector}
+  ports:
+    - {name: otlp-http, port: 4318, targetPort: otlp-http}
+    - {name: metrics, port: 9464, targetPort: metrics}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: andyur-system
+  labels: {app: otel-collector}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: otel-collector}
+  template:
+    metadata:
+      labels: {app: otel-collector}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: collector
+          # opentelemetry-collector-contrib 0.159.0 (multi-arch index digest)
+          image: docker.io/otel/opentelemetry-collector-contrib@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+          args: ["--config=/etc/otelcol-contrib/config.yaml"]
+          env:
+            # The ONE seam: where traces and metrics go after the Collector.
+            # Jaeger here; an adopter points this at Tempo, Honeycomb, or any
+            # OTLP/HTTP backend without touching the platform.
+            - {name: ANDYUR_TELEMETRY_BACKEND_OTLP_ENDPOINT, value: "http://andyur-jaeger:4318"}
+            # ~80 % of the container limit: the Go runtime collects before the
+            # kernel kills (the memory_limiter processor sheds at 256 MiB).
+            - {name: GOMEMLIMIT, value: "300MiB"}
+          ports:
+            - {name: otlp-http, containerPort: 4318}
+            - {name: metrics, containerPort: 9464}
+          readinessProbe:
+            tcpSocket: {port: otlp-http}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/otelcol-contrib, readOnly: true}
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector-config
+            items: [{key: config.yaml, path: config.yaml}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: andyur-jaeger
+  namespace: andyur-system
+  labels: {app: andyur-jaeger}
+spec:
+  selector: {app: andyur-jaeger}
+  ports:
+    - {name: otlp-http, port: 4318, targetPort: otlp-http}
+    - {name: query, port: 16686, targetPort: query}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: andyur-jaeger
+  namespace: andyur-system
+  labels: {app: andyur-jaeger}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: andyur-jaeger}
+  template:
+    metadata:
+      labels: {app: andyur-jaeger}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: jaeger
+          # Jaeger v2 2.20.0 (multi-arch index digest). v1 is end-of-life
+          # (2025-12-31); v2 is the Collector-based single binary.
+          image: cr.jaegertracing.io/jaegertracing/jaeger@sha256:46a886260e04002d8f45e213fc39063fa11a50446048fdaa64786fc0840cb9f8
+          args: ["--config=/etc/jaeger/config.yaml"]
+          ports:
+            - {name: otlp-http, containerPort: 4318}
+            - {name: query, containerPort: 16686}
+            - {name: health, containerPort: 13133}
+          readinessProbe:
+            httpGet: {path: /status, port: health}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {memory: 768Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/jaeger, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          configMap:
+            name: andyur-jaeger-config
+            items: [{key: config.yaml, path: config.yaml}]
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-collector
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: otel-collector}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    # OTLP from the platform's own components ...
+    - from:
+        - podSelector: {matchLabels: {app: andyur-server}}
+        - podSelector: {matchLabels: {app: andyur-worker}}
+        # The engine's execution worker (ADR-014 D11). Omitted at first, and
+        # every span and metric it exported timed out at this policy: a run's
+        # trace had the server and the runner and a hole where the launch was.
+        - podSelector: {matchLabels: {app: andyur-temporal-execution-worker}}
+        - podSelector: {matchLabels: {app: andyur-operator}}
+        # ... and from the trusted run PROXY sidecar in any namespace that
+        # passed the isolation probe (andyur-runs, and a gate's own namespace).
+        # The agent/workload selector is deliberately absent.
+        - namespaceSelector: {matchLabels: {andyur.network-policy/verified: "true"}}
+          podSelector: {matchLabels: {app.kubernetes.io/component: proxy}}
+      ports: [{protocol: TCP, port: 4318}]
+    # The metrics exporter, read by the operator (the gates' vantage point).
+    - from:
+        - podSelector: {matchLabels: {app: andyur-operator}}
+      ports: [{protocol: TCP, port: 9464}]
+  egress:
+    # THE WORKFLOW ENGINE'S METRICS PORT, and nothing else on it. The Collector
+    # pulls Temporal's Prometheus endpoint because Temporal does not push OTLP;
+    # this is the only address it scrapes, which is why the receiver names a
+    # static target instead of asking Kubernetes what exists.
+    - to:
+        - podSelector: {matchLabels: {app: andyur-temporal}}
+      ports: [{protocol: TCP, port: 9090}]
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector: {matchLabels: {app: andyur-jaeger}}
+      ports: [{protocol: TCP, port: 4318}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: andyur-jaeger
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-jaeger}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: otel-collector}}
+      ports: [{protocol: TCP, port: 4318}]
+    - from:
+        - podSelector: {matchLabels: {app: andyur-operator}}
+      ports: [{protocol: TCP, port: 16686}]
+  egress: []

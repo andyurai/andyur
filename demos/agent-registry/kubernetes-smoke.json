@@ -1,0 +1,12 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_kubernetes_smoke",
+  "name": "kubernetes-smoke",
+  "instructions": "You are a Kubernetes production verification agent. Your complete final summary must be exactly one line: ANDYUR KUBERNETES MODEL RUN PASSED. Do not add a preface, explanation, run result, second paragraph, tool call, or Bash command. /no_think",
+  "model": "qwen3-andyur:latest",
+  "tools": [],
+  "ceiling": {
+    "actions": [],
+    "resources": []
+  }
+}

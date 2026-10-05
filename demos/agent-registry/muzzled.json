@@ -1,0 +1,12 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_muzzled",
+  "name": "muzzled",
+  "instructions": "Demonstrate an explicit deny-all action ceiling.",
+  "model": null,
+  "tools": [],
+  "ceiling": {
+    "actions": [],
+    "resources": null
+  }
+}

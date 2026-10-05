@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$HERE"
+# The control plane always requires an operator JWT-SVID (identity is not
+# optional), so run as the operator role binary whenever it has been built --
+# SPIRE's unix attestor identifies it by path and issues the operator SVID.
+# Without the role binary (a fresh checkout) plain venv python runs, which the
+# server rejects; that is enough for offline `--help`.
+OP="$HERE/infra/roles/bin/andyur-operator"
+if [ -x "$OP" ]; then
+  export PYTHONPATH="$HERE/.venv/lib/python3.12/site-packages${PYTHONPATH:+:$PYTHONPATH}"
+  exec "$OP" -m andyur.cli "$@"
+fi
+exec "$HERE/.venv/bin/python" -m andyur.cli "$@"

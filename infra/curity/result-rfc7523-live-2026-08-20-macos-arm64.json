@@ -1,0 +1,61 @@
+{
+  "actor_subject": "spiffe://andyur.test/agent/conformance/run/c7e599ce-7279-4a39-b08d-6abd2a6898b8",
+  "audience": "https://tool.andyur.test",
+  "issuer": "http://8f9442a98dda:8443/oauth/v2/oauth-anonymous",
+  "mutation": {
+    "act_assignment_removed": true,
+    "procedure_restored": true,
+    "semantic_assertion_red": true,
+    "semantic_assertion_restored_green": true
+  },
+  "negative": {
+    "attacker_signature": {
+      "attempts": 2,
+      "error": "invalid_grant",
+      "status": 400
+    },
+    "wrong_audience": {
+      "attempts": 2,
+      "error": "invalid_grant",
+      "status": 400
+    }
+  },
+  "positive": {
+    "actor_attempts": 2,
+    "actor_continuity": true,
+    "actor_intermediate_dpop_bound": false,
+    "actor_status": 200,
+    "dpop_jkt_continuity": true,
+    "exchange_attempts": 2,
+    "exchange_status": 200,
+    "source_attempts": 1,
+    "subject_status": 200
+  },
+  "product_version": "11.4.0",
+  "resource_enforcement": {
+    "denials": {
+      "future": 401,
+      "replay": 401,
+      "stale": 401,
+      "wrong_ath": 401,
+      "wrong_holder": 401,
+      "wrong_method": 401,
+      "wrong_target": 401
+    },
+    "executions": 1,
+    "https": true,
+    "replay_entries": 1,
+    "teardown": true
+  },
+  "result": "pass",
+  "schema": "andyur-curity-rfc7523-live/v1",
+  "scope": "andyur.invoke",
+  "source_sha256": {
+    "andyur/resource_dpop.py": "e3ae32646862a7daad6e453e792a0f23578e6314830a3cf0294e6dc13b60c5a8",
+    "infra/curity/token-exchange.js": "cc536c5ebeec1b2c3ad7e77f3e181983c0300b7578a3fbeedda979425f2c759f",
+    "infra/curity/verify-rfc7523.py": "650862f76c5deb80e5decfb4941c15ebb30af22ea8f749cb925602643b5a85fb"
+  },
+  "teardown": {
+    "clients_deleted": true
+  }
+}

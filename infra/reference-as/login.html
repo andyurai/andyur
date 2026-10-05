@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         display: grid; place-items: center; min-height: 100vh; margin: 0;
+         background: #f6f7f9; color: #16181d; }
+  @media (prefers-color-scheme: dark) { body { background: #14161a; color: #e8eaed; } }
+  .card { width: min(360px, 92vw); background: #fff; border-radius: 12px; padding: 28px;
+          box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.08); }
+  @media (prefers-color-scheme: dark) { .card { background: #1e2126; box-shadow: none;
+          border: 1px solid #2c3138; } }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  .sub { font-size: 13px; opacity: .65; margin: 0 0 20px; }
+  label { display: block; font-size: 13px; font-weight: 500; margin: 14px 0 5px; }
+  input { width: 100%; box-sizing: border-box; padding: 9px 11px; font-size: 15px;
+          border: 1px solid #ccd0d6; border-radius: 7px; background: transparent;
+          color: inherit; }
+  @media (prefers-color-scheme: dark) { input { border-color: #3a4048; } }
+  input:focus { outline: 2px solid #4f7cff; outline-offset: -1px; border-color: transparent; }
+  button { width: 100%; margin-top: 20px; padding: 10px; font-size: 15px; font-weight: 500;
+           border: 0; border-radius: 7px; background: #2b6cff; color: #fff; cursor: pointer; }
+  button:hover { background: #1f5ce0; }
+  .err { margin-top: 14px; padding: 9px 11px; border-radius: 7px; font-size: 13px;
+         background: #fdeaea; color: #a3241f; }
+  @media (prefers-color-scheme: dark) { .err { background: #3a1f1f; color: #f3b3b0; } }
+  .note { margin-top: 18px; font-size: 12px; opacity: .55; text-align: center; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1>Sign in</h1>
+    <p class="sub">to continue to <strong>{{.Client}}</strong></p>
+    <form action="{{.Action}}" method="post" autocomplete="off">
+      <label for="u">Username</label>
+      <input id="u" name="username" autocapitalize="none" autocorrect="off" autofocus required>
+      <label for="p">Password</label>
+      <input id="p" name="password" type="password" required>
+      <button type="submit">Sign in</button>
+      {{if .Error}}<div class="err">{{.Error}}</div>{{end}}
+    </form>
+    <p class="note">Andyur standalone authorization server</p>
+  </main>
+</body>
+</html>

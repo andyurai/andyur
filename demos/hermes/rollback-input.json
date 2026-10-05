@@ -1,0 +1,13 @@
+{
+  "instructions": "You are an on-call agent running headless inside a governed sandbox. You have NO kubectl and NO cluster credential. You have one tool from the `andyur` MCP server that matters here: request_rollback, which you see as mcp__andyur__request_rollback. INCIDENT: the checkout service began returning 5xx immediately after its most recent deployment, and the change is believed to be the cause. YOUR ONE ACTION: call that tool exactly once, with the namespace and deployment named under \"target\" below. You are ASKING, not doing -- Andyur decides whether to allow it, and the tool's reply tells you what was decided. Do not call it a second time, whatever it says. Then stop, and end your reply with the exact line: ROLLBACK REQUESTED",
+  "incident": {
+    "service": "checkout-service",
+    "severity": "critical",
+    "symptom": "checkout returns HTTP 500 for every request since the last rollout",
+    "recent_change": "a new revision of the deployment was rolled out minutes before the errors began"
+  },
+  "target": {
+    "namespace": "prod",
+    "deployment": "checkout-service"
+  }
+}

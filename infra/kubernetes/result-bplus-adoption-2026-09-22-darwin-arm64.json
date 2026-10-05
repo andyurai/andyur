@@ -1,0 +1,38 @@
+{
+  "activity_attempt": 2,
+  "adopted_same_generation": true,
+  "api_server_sha256": "103ffc7eb9febafc1aefe1fff1de5832cb8bbee82c4ecc42fec9e5b74424444f",
+  "completed": true,
+  "finished_at": "2026-09-22T05:42:24.101903+00:00",
+  "gate": "bplus-adoption-after-worker-death",
+  "generation": "exec-015b7b1fa0b560b7",
+  "max_agent_pods": 1,
+  "max_proxy_pods": 1,
+  "nothing_left": true,
+  "one_runtime_throughout": true,
+  "platform": "macOS-14.8.3-arm64-arm-64bit",
+  "pods_before": [
+    "andyur-run-a12d726d520b-89bfbbe5-agent",
+    "andyur-run-a12d726d520b-89bfbbe5-proxy"
+  ],
+  "pods_seen": [
+    "andyur-run-a12d726d520b-89bfbbe5-agent",
+    "andyur-run-a12d726d520b-89bfbbe5-proxy"
+  ],
+  "retried_by_engine": true,
+  "run_id": "0d6cfd407f964810a0a7b03eb205cfdc",
+  "run_state": "done",
+  "same_pods": true,
+  "source_sha256": {
+    "andyur/daemon/engine_executor.py": "b7f3749208cb68646fbf06ee997fa73c19080b8cbb6d1a43ce8b6f4bcd0ca6a7",
+    "andyur/daemon/governed_kubernetes.py": "0ee8ecc96ec87df3123f0b5449ea7486923c73bfe7536a1e8fdf8711eb6daf61",
+    "andyur/daemon/kubernetes_controller.py": "b03dbe757e75d13c49846180178caeaeace4a71f35b551edfa54ee0c97d91b52",
+    "andyur/daemon/orchestrator.py": "143a417c7a1db7fabde2e0ebce48f905f07e1e18ff7d091e79b20b1016258c3b",
+    "andyur/orchestration/temporal/execution.py": "9a4a5fcc5f84e086133fb8f5b7de0226c66b94816fc8a002d0b6aeb003788421",
+    "andyur/orchestration/temporal/workflows.py": "4d013cf0189914fea8949cf4fa2f5160ce16aa440845c641fb455652a465a23b",
+    "andyur/server/coordinator.py": "914a6a034bb75c6c38ed37b8031d65b19779d461f5c22063bc4c6988d1c6b38e",
+    "infra/kubernetes/verify-bplus-adoption.sh": "bed80e19ce729075632c696d167c738f57bfdbd53eaec652d5779efd0b59f20f"
+  },
+  "started_at": "2026-09-22T05:39:30Z",
+  "verdict": "PASS"
+}

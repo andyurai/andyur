@@ -1,0 +1,701 @@
+{
+  "input_schemas": {
+    "get_wazuh_agent_ports": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "agent_id": {
+          "description": "Agent ID to get network ports for (required, e.g., \"001\", \"002\", \"003\")",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Maximum number of ports to retrieve (default: 300)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        },
+        "protocol": {
+          "description": "Protocol to filter by (e.g., \"tcp\", \"udp\")",
+          "type": "string"
+        },
+        "state": {
+          "description": "State to filter by (e.g., \"LISTENING\", \"ESTABLISHED\")",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id",
+        "protocol",
+        "state"
+      ],
+      "title": "GetAgentPortsParams",
+      "type": "object"
+    },
+    "get_wazuh_agent_processes": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "agent_id": {
+          "description": "Agent ID to get processes for (required, e.g., \"0\", \"1\", \"001\")",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Maximum number of processes to retrieve (default: 300)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        },
+        "search": {
+          "description": "Search string to filter processes by name or command (optional)",
+          "nullable": true,
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id"
+      ],
+      "title": "GetAgentProcessesParams",
+      "type": "object"
+    },
+    "get_wazuh_agents": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "group": {
+          "description": "Agent group to filter by (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "ip": {
+          "description": "Agent IP address to filter by (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "limit": {
+          "description": "Maximum number of agents to retrieve (default: 300)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        },
+        "name": {
+          "description": "Agent name to search for (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "os_platform": {
+          "description": "Operating system platform to filter by (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "status": {
+          "description": "Agent status filter (active, disconnected, pending, never_connected)",
+          "type": "string"
+        },
+        "version": {
+          "description": "Agent version to filter by (optional)",
+          "nullable": true,
+          "type": "string"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "GetAgentsParams",
+      "type": "object"
+    },
+    "get_wazuh_alert_summary": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "description": "Parameters for getting alert summary",
+      "properties": {
+        "limit": {
+          "description": "Maximum number of alerts to retrieve (default: 300)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        }
+      },
+      "title": "GetAlertSummaryParams",
+      "type": "object"
+    },
+    "get_wazuh_cluster_health": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "GetClusterHealthParams",
+      "type": "object"
+    },
+    "get_wazuh_cluster_nodes": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "limit": {
+          "description": "Maximum number of nodes to retrieve (optional, Wazuh API default is 500)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        },
+        "node_type": {
+          "description": "Filter by node type (e.g., 'master', 'worker') (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "offset": {
+          "description": "Number of nodes to skip (offset) (optional, default: 0)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        }
+      },
+      "title": "GetClusterNodesParams",
+      "type": "object"
+    },
+    "get_wazuh_critical_vulnerabilities": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "agent_id": {
+          "description": "Agent ID to get critical vulnerabilities for (required, e.g., \"0\", \"1\", \"001\")",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Maximum number of vulnerabilities to retrieve (default: 300)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent_id"
+      ],
+      "title": "GetCriticalVulnerabilitiesParams",
+      "type": "object"
+    },
+    "get_wazuh_log_collector_stats": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "agent_id": {
+          "description": "Agent ID to get log collector stats for (required, e.g., \"0\", \"1\", \"001\")",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id"
+      ],
+      "title": "GetLogCollectorStatsParams",
+      "type": "object"
+    },
+    "get_wazuh_manager_error_logs": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "limit": {
+          "description": "Maximum number of error log entries to retrieve (default: 300)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        }
+      },
+      "title": "GetManagerErrorLogsParams",
+      "type": "object"
+    },
+    "get_wazuh_remoted_stats": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "GetRemotedStatsParams",
+      "type": "object"
+    },
+    "get_wazuh_rules_summary": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "filename": {
+          "description": "Filename to filter by (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "group": {
+          "description": "Rule group to filter by (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "level": {
+          "description": "Rule level to filter by (optional)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        },
+        "limit": {
+          "description": "Maximum number of rules to retrieve (default: 300)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        }
+      },
+      "title": "GetRulesSummaryParams",
+      "type": "object"
+    },
+    "get_wazuh_vulnerability_summary": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "agent_id": {
+          "description": "Agent ID to filter vulnerabilities by (required, e.g., \"0\", \"1\", \"001\")",
+          "type": "string"
+        },
+        "cve": {
+          "description": "CVE ID to search for (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "limit": {
+          "description": "Maximum number of vulnerabilities to retrieve (default: 10000)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        },
+        "severity": {
+          "description": "Severity level to filter by (Low, Medium, High, Critical) (optional)",
+          "nullable": true,
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id"
+      ],
+      "title": "GetVulnerabilitiesSummaryParams",
+      "type": "object"
+    },
+    "get_wazuh_weekly_stats": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "GetWeeklyStatsParams",
+      "type": "object"
+    },
+    "search_wazuh_manager_logs": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "level": {
+          "description": "Log level to filter by (e.g., \"error\", \"warning\", \"info\")",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Maximum number of log entries to retrieve (default: 300)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        },
+        "offset": {
+          "description": "Number of log entries to skip (default: 0)",
+          "format": "uint32",
+          "minimum": 0,
+          "nullable": true,
+          "type": "integer"
+        },
+        "search_term": {
+          "description": "Search term to filter log descriptions (optional)",
+          "nullable": true,
+          "type": "string"
+        },
+        "tag": {
+          "description": "Log tag to filter by (e.g., \"wazuh-modulesd\") (optional)",
+          "nullable": true,
+          "type": "string"
+        }
+      },
+      "required": [
+        "level"
+      ],
+      "title": "SearchManagerLogsParams",
+      "type": "object"
+    }
+  },
+  "published_tools": [
+    "get_wazuh_agent_ports",
+    "get_wazuh_agent_processes",
+    "get_wazuh_agents",
+    "get_wazuh_alert_summary",
+    "get_wazuh_cluster_health",
+    "get_wazuh_cluster_nodes",
+    "get_wazuh_critical_vulnerabilities",
+    "get_wazuh_log_collector_stats",
+    "get_wazuh_manager_error_logs",
+    "get_wazuh_remoted_stats",
+    "get_wazuh_rules_summary",
+    "get_wazuh_vulnerability_summary",
+    "get_wazuh_weekly_stats",
+    "search_wazuh_manager_logs"
+  ],
+  "recorded_from": {
+    "backend": "wazuh/wazuh-docker single-node",
+    "server": "gbrigandi/mcp-server-wazuh",
+    "server_version": "v0.3.0",
+    "transport_recorded_over": "stdio",
+    "wazuh_version": "v4.14.0"
+  },
+  "responses": {
+    "get_wazuh_agent_ports": {
+      "arguments": {
+        "agent_id": "000",
+        "protocol": "tcp",
+        "state": "LISTENING"
+      },
+      "content": [
+        {
+          "text": "Protocol: tcp\nLocal: 0.0.0.0:1515\nRemote: 0.0.0.0:0\nState: listening\nProcess Name:  \nPID: 0\nInode: 72139036\nTX Queue: 0\nRX Queue: 0",
+          "type": "text"
+        },
+        {
+          "text": "Protocol: tcp\nLocal: 127.0.0.11:44563\nRemote: 0.0.0.0:0\nState: listening\nProcess Name:  \nPID: 0\nInode: 72136013\nTX Queue: 0\nRX Queue: 0",
+          "type": "text"
+        },
+        {
+          "text": "Protocol: tcp\nLocal: 0.0.0.0:1514\nRemote: 0.0.0.0:0\nState: listening\nProcess Name:  \nPID: 0\nInode: 72139945\nTX Queue: 0\nRX Queue: 0",
+          "type": "text"
+        },
+        {
+          "text": "Protocol: tcp\nLocal: 0.0.0.0:55000\nRemote: 0.0.0.0:0\nState: listening\nProcess Name:  \nPID: 0\nInode: 72128293\nTX Queue: 0\nRX Queue: 0",
+          "type": "text"
+        }
+      ],
+      "isError": false
+    },
+    "get_wazuh_agent_processes": {
+      "arguments": {
+        "agent_id": "000",
+        "limit": 25
+      },
+      "content": [
+        {
+          "text": "PID: 1\nName: s6-svscan\nState: S\nPPID: 0\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:06 UTC\nMemory (Resident): 2 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 1474\nName: sleep\nState: S\nPPID: 320\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:17 UTC\nMemory (Resident): 3 KB\nMemory (VM Size): 283 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 1663\nName: rpm\nState: R\nPPID: 785\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:17 UTC\nMemory (Resident): 6 KB\nMemory (VM Size): 290 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 196\nName: if\nState: S\nPPID: 54\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:06 UTC\nMemory (Resident): 0 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 199\nName: forx\nState: S\nPPID: 196\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:06 UTC\nMemory (Resident): 0 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 242\nName: foreground\nState: S\nPPID: 199\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:07 UTC\nMemory (Resident): 0 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 245\nName: bash\nState: S\nPPID: 242\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:07 UTC\nMemory (Resident): 5 KB\nMemory (VM Size): 282 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 320\nName: sh\nState: S\nPPID: 245\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:08 UTC\nMemory (Resident): 6 KB\nMemory (VM Size): 283 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 37\nName: foreground\nState: S\nPPID: 1\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:06 UTC\nMemory (Resident): 0 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 38\nName: s6-supervise\nState: S\nPPID: 1\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:06 UTC\nMemory (Resident): 0 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 386\nName: python3\nState: S\nPPID: 1\nUser: wazuh\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:11 UTC\nMemory (Resident): 123 KB\nMemory (VM Size): 1126 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 387\nName: python3\nState: S\nPPID: 386\nUser: wazuh\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:11 UTC\nMemory (Resident): 74 KB\nMemory (VM Size): 428 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 388\nName: python3\nState: S\nPPID: 386\nUser: wazuh\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:11 UTC\nMemory (Resident): 73 KB\nMemory (VM Size): 428 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 391\nName: python3\nState: S\nPPID: 386\nUser: wazuh\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:11 UTC\nMemory (Resident): 74 KB\nMemory (VM Size): 571 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 394\nName: python3\nState: S\nPPID: 386\nUser: wazuh\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:11 UTC\nMemory (Resident): 73 KB\nMemory (VM Size): 715 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 436\nName: wazuh-authd\nState: S\nPPID: 1\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:12 UTC\nMemory (Resident): 13 KB\nMemory (VM Size): 391 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 452\nName: wazuh-db\nState: S\nPPID: 1\nUser: wazuh\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:13 UTC\nMemory (Resident): 20 KB\nMemory (VM Size): 1385 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 47\nName: if\nState: S\nPPID: 37\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:06 UTC\nMemory (Resident): 0 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 48\nName: foreground\nState: S\nPPID: 47\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:06 UTC\nMemory (Resident): 0 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 499\nName: wazuh-execd\nState: S\nPPID: 1\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:14 UTC\nMemory (Resident): 5 KB\nMemory (VM Size): 307 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 511\nName: wazuh-analysisd\nState: S\nPPID: 1\nUser: wazuh\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:14 UTC\nMemory (Resident): 35 KB\nMemory (VM Size): 4917 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 521\nName: wazuh-syscheckd\nState: S\nPPID: 1\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:14 UTC\nMemory (Resident): 19 KB\nMemory (VM Size): 621 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 535\nName: wazuh-remoted\nState: S\nPPID: 1\nUser: wazuh\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:14 UTC\nMemory (Resident): 15 KB\nMemory (VM Size): 1035 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 54\nName: if\nState: S\nPPID: 48\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:06 UTC\nMemory (Resident): 0 KB\nMemory (VM Size): 280 KB",
+          "type": "text"
+        },
+        {
+          "text": "PID: 752\nName: wazuh-logcollec\nState: S\nPPID: 1\nUser: root\nCommand: /run/rosetta/rosetta\nStart Time: 2026-09-04 07:57:15 UTC\nMemory (Resident): 10 KB\nMemory (VM Size): 356 KB",
+          "type": "text"
+        }
+      ],
+      "isError": false
+    },
+    "get_wazuh_agents": {
+      "arguments": {
+        "status": "active"
+      },
+      "content": [
+        {
+          "text": "Agent ID: 000 (Wazuh Manager)\nName: wazuh.manager\nStatus: \ud83d\udfe2 ACTIVE\nIP: 127.0.0.1\nOS: Amazon Linux 2023 (x86_64)\nAgent Version: Wazuh v4.14.0\nLast Keep Alive: 9999-12-31T23:59:59+00:00\nRegistered: 2026-09-04T07:57:13+00:00\nNode: node01\nConfig Status: \u2705 SYNCED",
+          "type": "text"
+        }
+      ],
+      "isError": false
+    },
+    "get_wazuh_alert_summary": {
+      "arguments": {
+        "limit": 25
+      },
+      "content": [
+        {
+          "text": "Alert ID: 1788508682.705197\nTime: 2026-09-04T07:58:02.238+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 198.51.100.7\nUser: oracle",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.703033\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 203.0.113.42\nUser: admin",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.705730\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 203.0.113.42\nUser: admin",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.706271\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: PAM: User login failed.\nUser: deploy",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.702492\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 203.0.113.42\nUser: admin",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.703574\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 203.0.113.42\nUser: admin",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.707365\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: sshd: authentication success.\nSource IP: 203.0.113.42\nUser: root",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.701951\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 203.0.113.42\nUser: admin",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.704115\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 203.0.113.42\nUser: admin",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.704656\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 203.0.113.42\nUser: admin",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508682.706824\nTime: 2026-09-04T07:58:02.237+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: sshd: Attempt to login using a non-existent user\nSource IP: 203.0.113.42\nUser: admin",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508667.700449\nTime: 2026-09-04T07:57:47.625+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: SCA summary: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Score less than 80% (53)",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508656.698965\nTime: 2026-09-04T07:57:36.252+0000\nAgent: wazuh.manager\nLevel: 5\nDescription: SCA summary: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Score less than 80% (53)",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.696945\nTime: 2026-09-04T07:57:29.220+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure root is the only UID 0 account.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.694154\nTime: 2026-09-04T07:57:29.209+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure password fields are not empty.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.689234\nTime: 2026-09-04T07:57:29.199+0000\nAgent: wazuh.manager\nLevel: 7\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure accounts in /etc/passwd use shadowed passwords.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.685388\nTime: 2026-09-04T07:57:29.188+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure sticky bit is set on all world-writable directories.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.682030\nTime: 2026-09-04T07:57:29.176+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure permissions on /etc/gshadow- are configured.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.678550\nTime: 2026-09-04T07:57:29.164+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure permissions on /etc/gshadow are configured.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.675196\nTime: 2026-09-04T07:57:29.152+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure permissions on /etc/shadow- are configured.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.671726\nTime: 2026-09-04T07:57:29.141+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure permissions on /etc/shadow are configured.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.668857\nTime: 2026-09-04T07:57:29.129+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure permissions on /etc/group- are configured.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.665640\nTime: 2026-09-04T07:57:29.118+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure permissions on /etc/group are configured.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.662575\nTime: 2026-09-04T07:57:29.107+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure permissions on /etc/passwd- are configured.",
+          "type": "text"
+        },
+        {
+          "text": "Alert ID: 1788508649.659292\nTime: 2026-09-04T07:57:29.095+0000\nAgent: wazuh.manager\nLevel: 3\nDescription: CIS Benchmark for Amazon Linux 2023 Benchmark v1.0.0.: Ensure permissions on /etc/passwd are configured.",
+          "type": "text"
+        }
+      ],
+      "isError": false
+    },
+    "get_wazuh_rules_summary": {
+      "arguments": {
+        "limit": 25
+      },
+      "content": [
+        {
+          "text": "Rule ID: 1\nLevel: 0 (Low)\nDescription: Generic template for all syslog rules.\nGroups: syslog\nFile: 0010-rules_config.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 2\nLevel: 0 (Low)\nDescription: Generic template for all firewall rules.\nGroups: firewall\nFile: 0010-rules_config.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 3\nLevel: 0 (Low)\nDescription: Generic template for all ids rules.\nGroups: ids\nFile: 0010-rules_config.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 4\nLevel: 0 (Low)\nDescription: Generic template for all web rules.\nGroups: web-log\nFile: 0010-rules_config.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 5\nLevel: 0 (Low)\nDescription: Generic template for all web proxy rules.\nGroups: squid\nFile: 0010-rules_config.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 6\nLevel: 0 (Low)\nDescription: Generic template for all windows rules.\nGroups: windows\nFile: 0010-rules_config.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 7\nLevel: 0 (Low)\nDescription: Generic template for all wazuh rules.\nGroups: ossec\nFile: 0010-rules_config.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 200\nLevel: 0 (Low)\nDescription: Grouping of wazuh rules.\nGroups: wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 201\nLevel: 0 (Low)\nDescription: Agent event queue rule\nGroups: agent_flooding, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 202\nLevel: 7 (Medium)\nDescription: Agent event queue is $(level) full.\nGroups: agent_flooding, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled\nCompliance: GDPR: IV_35.7.d | PCI DSS: 10.6.1",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 203\nLevel: 9 (High)\nDescription: Agent event queue is full. Events may be lost.\nGroups: agent_flooding, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled\nCompliance: GDPR: IV_35.7.d | PCI DSS: 10.6.1",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 204\nLevel: 12 (High)\nDescription: Agent event queue is flooded. Check the agent configuration.\nGroups: agent_flooding, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled\nCompliance: GDPR: IV_35.7.d | PCI DSS: 10.6.1",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 205\nLevel: 3 (Low)\nDescription: Agent event queue is back to normal load.\nGroups: agent_flooding, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 210\nLevel: 0 (Low)\nDescription: Remote upgrade alert\nGroups: upgrade, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 211\nLevel: 0 (Low)\nDescription: Remote installation alert\nGroups: upgrade, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 212\nLevel: 3 (Low)\nDescription: Remote upgrade started.\nGroups: upgrade, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 213\nLevel: 7 (Medium)\nDescription: Remote upgrade could not be launched. Error: $(error).\nGroups: upgrade, upgrade_failure, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 214\nLevel: 3 (Low)\nDescription: Remote upgrade finished successfully.\nGroups: upgrade, upgrade_success, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 215\nLevel: 6 (Medium)\nDescription: Remote upgrade failed. Agent restored to previous version.\nGroups: upgrade, upgrade_failure, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 216\nLevel: 7 (Medium)\nDescription: Remote upgrade failed. Agent disconnected.\nGroups: upgrade, upgrade_failure, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 217\nLevel: 3 (Low)\nDescription: Custom installation started.\nGroups: upgrade, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 218\nLevel: 7 (Medium)\nDescription: Custom installation could not be launched. Error: $(error).\nGroups: upgrade, upgrade_failure, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 220\nLevel: 7 (Medium)\nDescription: The agent could not restart due to a $(module) failure in the remote configuration\nGroups: agent_restarting, configuration_failure, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 221\nLevel: 0 (Low)\nDescription: Syscollector event.\nGroups: wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        },
+        {
+          "text": "Rule ID: 222\nLevel: 7 (Medium)\nDescription: The agent could not restart due to a error while unmerging files.\nGroups: agent_restarting, configuration_failure, wazuh\nFile: 0016-wazuh_rules.xml\nStatus: enabled",
+          "type": "text"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "schema": "andyur.recorded-mcp/v1"
+}

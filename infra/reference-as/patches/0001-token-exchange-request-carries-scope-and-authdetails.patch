@@ -1,0 +1,102 @@
+diff --git a/internal/token/exchange.go b/internal/token/exchange.go
+index 77857d5..89dc084 100644
+--- a/internal/token/exchange.go
++++ b/internal/token/exchange.go
+@@ -90,13 +90,15 @@ func generateExchangeToken(ctx oidc.Context, req request) (response, error) {
+ 	}
+ 
+ 	result, err := ctx.TokenExchangeHandle(goidc.TokenExchangeRequest{
+-		RequestedTokenType: req.requestedTokenType,
+-		SubjectToken:       req.subjectToken,
+-		SubjectTokenType:   req.subjectTokenType,
+-		ActorToken:         req.actorToken,
+-		ActorTokenType:     req.actorTokenType,
+-		Audience:           req.audience,
+-		Resource:           req.resources,
++		RequestedTokenType:   req.requestedTokenType,
++		SubjectToken:         req.subjectToken,
++		SubjectTokenType:     req.subjectTokenType,
++		ActorToken:           req.actorToken,
++		ActorTokenType:       req.actorTokenType,
++		Audience:             req.audience,
++		Resource:             req.resources,
++		RequestedScopes:      strings.Fields(req.scopes),
++		RequestedAuthDetails: req.authDetails,
+ 	})
+ 	if err != nil {
+ 		return response{}, fmt.Errorf("could not handle token exchange: %w", err)
+diff --git a/internal/token/model.go b/internal/token/model.go
+index 6421881..f5320bd 100644
+--- a/internal/token/model.go
++++ b/internal/token/model.go
+@@ -103,11 +103,14 @@ type request struct {
+ 	codeVerifier string
+ 	resources    goidc.Resources
+ 	authDetails  []goidc.AuthDetail
+-	assertion    string
+-	authReqID    string
+-	preAuthCode  string
+-	txCode       string
+-	deviceCode   string
++	// Set when `authorization_details` was present and did not parse. Kept
++	// separate from a nil authDetails, which legitimately means "none asked for".
++	authDetailsMalformed bool
++	assertion            string
++	authReqID            string
++	preAuthCode          string
++	txCode               string
++	deviceCode           string
+ 	// audience is the logical name of the target service where the client
+ 	// intends to use the requested security token.
+ 	// Multiple audience values indicate the token is intended for multiple
+@@ -154,6 +157,13 @@ func newRequest(r *http.Request) request {
+ 		var authDetailsObject []goidc.AuthDetail
+ 		if err := json.Unmarshal([]byte(authDetails), &authDetailsObject); err == nil {
+ 			req.authDetails = authDetailsObject
++		} else {
++			// FAIL CLOSED. Silently dropping an unparseable value issued a token
++			// with NO authorization_details to a client that asked for one --
++			// `{"type":"x"}` (an object rather than an array) returned 200 and an
++			// UNPINNED token. A constraint that fails to parse is not the absence
++			// of a constraint.
++			req.authDetailsMalformed = true
+ 		}
+ 	}
+ 
+diff --git a/internal/token/validation.go b/internal/token/validation.go
+index 283ad03..e3d9eb3 100644
+--- a/internal/token/validation.go
++++ b/internal/token/validation.go
+@@ -137,6 +137,10 @@ type authDetailsValidationOptions struct {
+ 
+ // validateAuthDetails validates the auth details for the token request.
+ func validateAuthDetails(ctx oidc.Context, req request, c *goidc.Client, opts *authDetailsValidationOptions) error {
++	if req.authDetailsMalformed {
++		return goidc.NewError(goidc.ErrorCodeInvalidAuthDetails,
++			"authorization_details is not a JSON array of objects")
++	}
+ 	if !ctx.RAREnabled || req.authDetails == nil {
+ 		return nil
+ 	}
+diff --git a/pkg/goidc/model.go b/pkg/goidc/model.go
+index c7a5d0b..f22fbe1 100644
+--- a/pkg/goidc/model.go
++++ b/pkg/goidc/model.go
+@@ -975,6 +975,17 @@ type TokenExchangeRequest struct {
+ 	// Resource is a URI that indicates the target service or resource where
+ 	// the client intends to use the requested security token.
+ 	Resource Resources
++	// RequestedScopes is the scope the client asked for, already parsed.
++	//
++	// Without this a policy running in the exchange handler cannot see what was
++	// requested, and the handler is the ONLY place that knows the subject -- it
++	// is what resolves the subject token. Scope, resource and authorization
++	// details are all validated before the handler runs, so a deployment that
++	// needs a subject-aware decision over them has nowhere to put it.
++	RequestedScopes []string
++	// RequestedAuthDetails is the RFC 9396 authorization_details the client
++	// asked for, already parsed, for the same reason.
++	RequestedAuthDetails []AuthDetail
+ }
+ 
+ type TokenExchangeResult struct {

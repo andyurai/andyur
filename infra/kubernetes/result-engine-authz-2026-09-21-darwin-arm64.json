@@ -1,0 +1,17 @@
+{
+  "api_server_sha256": "103ffc7eb9febafc1aefe1fff1de5832cb8bbee82c4ecc42fec9e5b74424444f",
+  "control_plane_polling": true,
+  "finished_at": "2026-09-21T17:23:54.653932+00:00",
+  "platform": "macOS-14.8.3-arm64-arm-64bit",
+  "probe_identity": "spiffe://andyur.local/engine-authz-probe",
+  "probe_refused": true,
+  "refusal_logged": true,
+  "route_open": true,
+  "source_sha256": {
+    "infra/kubernetes/temporal.yaml": "ff3ddaded8fb85f7317b5be3abc8ab70817b17598df3ff5f722b3cef7b916785",
+    "infra/kubernetes/verify-engine-authz.sh": "4ab7bfbf1c6ef5459946f1b33c93db84ec537f44d3ca64ae11bb71bb93f042a3"
+  },
+  "started_at": "2026-09-21T17:23:26Z",
+  "teardown_absent": true,
+  "verdict": "PASS"
+}

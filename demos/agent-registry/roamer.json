@@ -1,0 +1,19 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_9c2e_roaming",
+  "name": "roamer",
+  "instructions": "Exercise resource-pin enforcement without exceeding the run's delegated authority.",
+  "model": null,
+  "tools": [
+    {
+      "name": "bank",
+      "reach_url": "http://authority-tool:8080/mcp",
+      "resource_id": "tool:bank",
+      "authority": "managed"
+    }
+  ],
+  "ceiling": {
+    "actions": null,
+    "resources": null
+  }
+}

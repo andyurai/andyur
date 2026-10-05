@@ -1,0 +1,831 @@
+# The workflow engine, self-hosted, for the Temporal provider.
+#
+# NOTHING HERE IS ON THE RUN PATH, and two independent things make that true.
+#
+# THE ROUTE. The NetworkPolicies at the end of this file admit the control
+# plane and the registration Job to 7233 and nothing else; an agent Pod has no
+# route to this service.
+#
+# THE IDENTITY. An agent Pod is NOT without a credential for the engine: the run
+# proxy in andyur-runs holds an X.509 SVID from the same trust domain as
+# everything here. Chaining to the trust bundle therefore proves nothing about
+# who is calling, and for a while it was the only check -- the frontend
+# authenticated every workload in the trust domain and authorized none, so the
+# route was the barrier and a CNI that did not enforce NetworkPolicy would have
+# handed full engine administration to anything with an SVID. Temporal OSS has
+# no authorizer that reads a client certificate's URI SAN. So the engine's only
+# listener is now an Envoy sidecar that terminates mTLS and admits an exact
+# allowlist of SPIFFE IDs (the `andyur-temporal-authz` ConfigMap), and every
+# Temporal service binds LOOPBACK, so there is no port on the pod network that
+# does not pass through it. The threat model assumes the agent is compromised,
+# so "the agent has no reason to reach Temporal" is not an argument -- the two
+# barriers are.
+#
+# SHAPE. One Pod runs all five services (frontend, internal frontend, history,
+# matching, worker) against a dedicated Postgres, every one of them on
+# loopback. That is why it is exactly one Pod: the services find each other at
+# 127.0.0.1, which only means "each other" inside a single Pod.
+#
+# PERSISTENCE IS ITS OWN DATABASE, not the IdP's. Temporal's schema migrations
+# and load profile are independent of Keycloak's, and sharing would make an
+# outage in either an outage in both.
+#
+# PINNED BY DIGEST, like every other image in this tree. Resolved from the tags:
+#   temporalio/server            1.25.2
+#   temporalio/admin-tools       1.25.2-tctl-1.18.1-cli-1.1.2
+#   postgres                     16.4-alpine  (the same digest idp.yaml pins)
+# The server version MATCHES THE ONE CI RUNS. The campaign is the only thing
+# that knows whether the provider works, and a production server it never met
+# would make that evidence about a different program.
+#
+# CREDENTIALS ARE THE DEPLOYER'S, exactly as for the IdP: this file references
+# `andyur-temporal-secrets` and no credential ships in the repository.
+#
+#   kubectl -n andyur-system create secret generic andyur-temporal-secrets \
+#     --from-literal=db-password="$(openssl rand -hex 24)"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: andyur-temporal
+  namespace: andyur-system
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: andyur-temporal-db
+  namespace: andyur-system
+spec:
+  clusterIP: None
+  selector: {app: andyur-temporal-db}
+  ports:
+    - {name: postgres, port: 5432, targetPort: postgres}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: andyur-temporal-db
+  namespace: andyur-system
+spec:
+  serviceName: andyur-temporal-db
+  replicas: 1
+  selector: {matchLabels: {app: andyur-temporal-db}}
+  template:
+    metadata:
+      labels: {app: andyur-temporal-db}
+    spec:
+      serviceAccountName: andyur-temporal
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: postgres
+          image: docker.io/library/postgres@sha256:5660c2cbfea50c7a9127d17dc4e48543eedd3d7a41a595a2dfa572471e37e64c
+          env:
+            # The two databases are CREATED BY THE SCHEMA STEP, not here:
+            # `POSTGRES_DB` makes only one, and Temporal needs a second for
+            # visibility. This one exists so the image has a database to
+            # initialise and `pg_isready` has one to answer about.
+            - {name: POSTGRES_DB, value: temporal}
+            - {name: POSTGRES_USER, value: temporal}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: andyur-temporal-secrets, key: db-password}}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+          ports: [{name: postgres, containerPort: 5432}]
+          readinessProbe:
+            exec: {command: ["pg_isready", "-U", "temporal", "-d", "temporal"]}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 1000m, memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+            - {name: run, mountPath: /var/run/postgresql}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: run, emptyDir: {}}
+        - {name: tmp, emptyDir: {}}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        # SIZED FOR THE RETENTION BELOW, and the arithmetic is what matters.
+        # A live run hands off roughly 72 times a day, and each closed
+        # execution is ~675KB on disk (measured: ~245 bytes per history event
+        # including row and index overhead). Every closed execution is kept for
+        # the retention period, so storage is proportional to run-seconds, not
+        # to runs. At 30 days on 10Gi the disk filled at about SEVEN
+        # concurrently live runs. At 7 days on 50Gi the disk is FULL at roughly
+        # 150, and full is a Postgres PANIC; with room for WAL, dead tuples and
+        # short runs' executions (~75%), the working ceiling is about 120.
+        #
+        # A volumeClaimTemplate cannot be resized in place. An existing
+        # deployment keeps its old claim until it is recreated -- see
+        # RUNBOOK.md, "Resizing the database volume".
+        resources: {requests: {storage: 50Gi}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: andyur-temporal-dynamic-config
+  namespace: andyur-system
+data:
+  # Dynamic config is Temporal's own runtime knobs. Retention is NOT set here:
+  # it belongs to the namespace and is set when the namespace is registered,
+  # where it can be read back and changed without a rollout.
+  dynamic_config.yaml: |
+    # Deliberately empty. Every knob added here is one an operator has to know
+    # about, and a file that starts full teaches nobody which ones matter.
+---
+# THE ENGINE'S OWN IDENTITY, served by the authorizer. The Envoy sidecar fetches
+# this SVID and the trust bundle straight from the SPIRE agent over SDS and is
+# handed each rotation as it happens; no certificate is written to disk in the
+# engine Pod. (The registration Job below still uses `spiffe-helper`, because
+# the Temporal CLI reads certificates from files.)
+#
+# THE DNS NAMES ARE THE POINT. A SPIFFE SVID identifies by URI SAN, and a
+# standard TLS stack verifies by hostname -- so an SVID with no DNS SAN is
+# refused by every ordinary client no matter how valid it is. The template
+# below puts the Service's names in the certificate, which is what lets the
+# Temporal SDK verify it without Andyur teaching it about SPIFFE.
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: andyur-temporal
+spec:
+  className: spire-system-andyur-spire
+  spiffeIDTemplate: spiffe://andyur.local/workflow-engine
+  namespaceSelector:
+    matchLabels: {kubernetes.io/metadata.name: andyur-system}
+  podSelector:
+    matchLabels: {app: andyur-temporal}
+  dnsNameTemplates:
+    - andyur-temporal
+    - andyur-temporal.andyur-system.svc
+    - andyur-temporal.andyur-system.svc.cluster.local
+  ttl: 1h
+---
+# THE REGISTRATION JOB IS A CLIENT LIKE ANY OTHER. Requiring client auth on the
+# engine means the thing that registers the namespace must present an SVID
+# too -- there is no exemption for the platform's own tooling, and there should
+# not be: an exemption is a credential-free path to the engine.
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: andyur-temporal-namespace
+spec:
+  className: spire-system-andyur-spire
+  spiffeIDTemplate: spiffe://andyur.local/workflow-engine-admin
+  namespaceSelector:
+    matchLabels: {kubernetes.io/metadata.name: andyur-system}
+  podSelector:
+    matchLabels: {app: andyur-temporal-namespace}
+  ttl: 1h
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: andyur-temporal-spiffe-helper
+  namespace: andyur-system
+data:
+  helper.conf: |
+    agent_address = "/spiffe-workload-api/spire-agent.sock"
+    cert_dir = "/svid"
+    svid_file_name = "tls.crt"
+    svid_key_file_name = "tls.key"
+    svid_bundle_file_name = "ca.crt"
+---
+# THE AUTHORIZER. Every connection to the engine from outside its Pod lands
+# here: mTLS terminated with the engine's SVID, the client's certificate
+# REQUIRED and chained to the trust bundle, and then its URI SAN checked
+# against an exact list. Anything else is closed before a byte reaches Temporal
+# -- and before a connection to Temporal is even opened: the proxy connects
+# upstream only once the client has sent data, which is after the RBAC filter
+# has decided. It connected at ACCEPT before, so every TCP connection, with or
+# without a certificate, held a Temporal connection for as long as it stayed
+# open; measured, 200 idle connections pinned 200 upstreams. A handshake that
+# does not finish in ten seconds is closed.
+#
+# THE LIST IS WHO NEEDS THE ENGINE, and nobody else:
+#   control-plane          the andyur-server Pod: the provider and the
+#                          workflow worker, which share that Pod's identity
+#   workflow-engine-admin  the Job that registers the namespace
+#   temporal-execution-worker  the execution worker, which polls the queue of
+#                          `execute_run(run_id)` Activities and launches or
+#                          adopts the run through Andyur's own launcher
+# Not the run-launching daemon (`worker`), not the operator, not the run proxy,
+# not the engine's own identity. EXACT matches, never a prefix: a prefix of
+# `spiffe://andyur.local/` is the trust domain again.
+#
+# TWO DECISIONS. WHO is connecting is fixed at the handshake, so that check is
+# a network filter over the authenticated peer: anyone else is refused before a
+# byte of gRPC is read. WHAT an admitted peer may call is per request, so the
+# gRPC stream is then terminated in an HTTP/2 connection manager whose RBAC
+# gives the platform identities the whole API and the execution worker only a
+# worker's calls. `h2` is advertised because gRPC clients refuse a server that
+# negotiates no ALPN.
+#
+# EVERY REFUSAL IS LOGGED, with the peer's SPIFFE ID and the matched policy.
+# The access log is on the listener rather than the proxy, because a refused
+# connection never reaches the proxy and its log would show nothing. A
+# connection that never started a handshake -- the kubelet's readiness probe,
+# every five seconds -- is not logged: it looked like a refusal and would have
+# been ~17,000 lines a day of them.
+#
+# TLS 1.3 ONLY. Every client is Go (the CLI) or rustls (the SDK), and both
+# speak it; the default floor also offered suites without forward secrecy.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: andyur-temporal-authz
+  namespace: andyur-system
+data:
+  envoy.yaml: |
+    node: {id: "spiffe://andyur.local/workflow-engine", cluster: andyur-temporal-authz}
+    admin:
+      address: {pipe: {path: /tmp/envoy-admin.sock, mode: 384}}
+    static_resources:
+      listeners:
+        - name: engine_mtls
+          address: {socket_address: {address: 0.0.0.0, port_value: 7233}}
+          access_log:
+            - name: envoy.access_loggers.stdout
+              filter:
+                extension_filter:
+                  name: envoy.access_loggers.extension_filters.cel
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.access_loggers.filters.cel.v3.ExpressionFilter
+                    # A completed mTLS handshake (admitted, or refused by
+                    # RBAC) or a handshake that FAILED with a reason. A bare
+                    # TCP connect has neither. `has` guards the reason: an
+                    # absent attribute is a CEL error, and an erroring
+                    # filter logs everything -- the first expression here did.
+                    expression: "connection.mtls || (has(connection.transport_failure_reason) && connection.transport_failure_reason != '')"
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                log_format:
+                  text_format_source:
+                    inline_string: "engine-authz peer=%DOWNSTREAM_PEER_URI_SAN% from=%DOWNSTREAM_REMOTE_ADDRESS% flags=%RESPONSE_FLAGS% detail=%CONNECTION_TERMINATION_DETAILS% tls_failure=%DOWNSTREAM_TRANSPORT_FAILURE_REASON% bytes_in=%BYTES_RECEIVED% bytes_out=%BYTES_SENT% duration_ms=%DURATION%\n"
+          filter_chains:
+            - transport_socket_connect_timeout: 10s
+              transport_socket:
+                name: envoy.transport_sockets.tls
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+                  require_client_certificate: true
+                  common_tls_context:
+                    alpn_protocols: [h2]
+                    tls_params: {tls_minimum_protocol_version: TLSv1_3}
+                    tls_certificate_sds_secret_configs:
+                      - name: "spiffe://andyur.local/workflow-engine"
+                        sds_config: &spire
+                          # WAIT FOR THE CERTIFICATE, however long. The default
+                          # gives up after 15s and opens the listener without
+                          # one: the TCP readiness probe then passes while
+                          # every handshake fails -- measured, with the SPIRE
+                          # socket absent.
+                          initial_fetch_timeout: 0s
+                          resource_api_version: V3
+                          api_config_source:
+                            api_type: GRPC
+                            transport_api_version: V3
+                            grpc_services: [{envoy_grpc: {cluster_name: spire_agent}}]
+                    validation_context_sds_secret_config:
+                      name: "spiffe://andyur.local"
+                      sds_config: *spire
+              filters:
+                - name: envoy.filters.network.rbac
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.network.rbac.v3.RBAC
+                    stat_prefix: engine_authz
+                    rules:
+                      action: ALLOW
+                      policies:
+                        platform:
+                          permissions: [{any: true}]
+                          principals:
+                            - authenticated: {principal_name: {exact: "spiffe://andyur.local/control-plane"}}
+                            - authenticated: {principal_name: {exact: "spiffe://andyur.local/workflow-engine-admin"}}
+                            - authenticated: {principal_name: {exact: "spiffe://andyur.local/temporal-execution-worker"}}
+                # WHAT EACH ADMITTED IDENTITY MAY CALL (B+ adversarial review).
+                # The platform identities administer the engine; the execution
+                # worker is a WORKER and may only make a worker's calls -- poll,
+                # respond, heartbeat. It cannot start, signal, cancel or
+                # terminate a workflow, or touch a schedule: with the whole API
+                # it could start the control plane's own workflows directly.
+                - name: envoy.filters.network.http_connection_manager
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                    stat_prefix: engine
+                    codec_type: HTTP2
+                    http2_protocol_options: {}
+                    access_log:
+                      - name: envoy.access_loggers.stdout
+                        filter:
+                          extension_filter:
+                            name: envoy.access_loggers.extension_filters.cel
+                            typed_config:
+                              "@type": type.googleapis.com/envoy.extensions.access_loggers.filters.cel.v3.ExpressionFilter
+                              expression: "response.code_details.startsWith('rbac_access_denied')"
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                          log_format:
+                            text_format_source:
+                              inline_string: "engine-authz-rpc peer=%DOWNSTREAM_PEER_URI_SAN% method=%REQ(:PATH)% detail=%RESPONSE_CODE_DETAILS%\n"
+                    route_config:
+                      virtual_hosts:
+                        - name: engine
+                          domains: ["*"]
+                          # NO ROUTE TIMEOUT: a task-queue poll is a long poll
+                          # (about a minute), and Envoy's default 15s would cut
+                          # every one of them.
+                          routes: [{match: {prefix: "/"}, route: {cluster: frontend, timeout: 0s}}]
+                    http_filters:
+                      - name: envoy.filters.http.rbac
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC
+                          rules:
+                            action: ALLOW
+                            policies:
+                              platform:
+                                permissions: [{any: true}]
+                                principals:
+                                  - authenticated: {principal_name: {exact: "spiffe://andyur.local/control-plane"}}
+                                  - authenticated: {principal_name: {exact: "spiffe://andyur.local/workflow-engine-admin"}}
+                              execution-worker:
+                                permissions:
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/GetSystemInfo"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/DescribeNamespace"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/PollWorkflowTaskQueue"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RespondWorkflowTaskCompleted"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RespondWorkflowTaskFailed"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RespondQueryTaskCompleted"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/GetWorkflowExecutionHistory"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/ResetStickyTaskQueue"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/PollActivityTaskQueue"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RecordActivityTaskHeartbeat"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RespondActivityTaskCompleted"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RespondActivityTaskFailed"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RespondActivityTaskCanceled"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/PollNexusTaskQueue"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RespondNexusTaskCompleted"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RespondNexusTaskFailed"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/ShutdownWorker"}}
+                                - url_path: {path: {exact: "/temporal.api.workflowservice.v1.WorkflowService/RecordWorkerHeartbeat"}}
+                                principals:
+                                  - authenticated: {principal_name: {exact: "spiffe://andyur.local/temporal-execution-worker"}}
+                      - name: envoy.filters.http.router
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+      clusters:
+        - name: spire_agent
+          connect_timeout: 1s
+          typed_extension_protocol_options:
+            envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+              "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+              explicit_http_config: {http2_protocol_options: {}}
+          load_assignment:
+            cluster_name: spire_agent
+            endpoints: [{lb_endpoints: [{endpoint: {address: {pipe: {path: /spiffe-workload-api/spire-agent.sock}}}}]}]
+        # THE FRONTEND ON LOOPBACK, which only this Pod can dial.
+        - name: frontend
+          connect_timeout: 2s
+          type: STATIC
+          typed_extension_protocol_options:
+            envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+              "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+              explicit_http_config: {http2_protocol_options: {}}
+          load_assignment:
+            cluster_name: frontend
+            endpoints: [{lb_endpoints: [{endpoint: {address: {socket_address: {address: 127.0.0.1, port_value: 7237}}}}]}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: andyur-temporal
+  namespace: andyur-system
+spec:
+  selector: {app: andyur-temporal}
+  ports:
+    - {name: grpc, port: 7233, targetPort: grpc}
+    - {name: metrics, port: 9090, targetPort: metrics}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: andyur-temporal
+  namespace: andyur-system
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: andyur-temporal}}
+  strategy: {type: Recreate}
+  template:
+    metadata:
+      labels: {app: andyur-temporal}
+    spec:
+      serviceAccountName: andyur-temporal
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        # THE SCHEMA, BEFORE THE SERVER. `temporalio/auto-setup` does this at
+        # boot and is a development convenience: it decides on every start what
+        # the database should look like, which is the last thing a production
+        # deployment wants. Here the step is explicit, ordered and visible in
+        # `kubectl describe`.
+        - name: schema
+          image: docker.io/temporalio/admin-tools@sha256:f048113e98748c6b902e1962e3225082f42a4760467aaeda139e67c4aa692231
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              export SQL_PLUGIN=postgres12
+              export SQL_HOST=andyur-temporal-db
+
+              # WAITED FOR, NOT CRASH-LOOPED INTO. Without this the step starts
+              # before the database has endpoints, DNS answers NXDOMAIN, and the
+              # container dies -- then Kubernetes retries it with an
+              # exponentially growing backoff until the timing happens to work.
+              # It DOES eventually succeed, which is the problem: a deploy that
+              # reaches the right state by restarting cannot be told apart from
+              # one that is genuinely broken, and the backoff makes the healthy
+              # case slower every time.
+              i=0
+              until pg_isready -h "$SQL_HOST" -p 5432 -U temporal >/dev/null 2>&1; do
+                i=$((i + 1))
+                [ "$i" -gt 120 ] && { echo "the database never became ready"; exit 1; }
+                sleep 2
+              done
+              export SQL_PORT=5432
+              export SQL_USER=temporal
+              export SQL_PASSWORD="$DB_PASSWORD"
+              base=/etc/temporal/schema/postgresql/v12
+
+              for db in temporal:temporal temporal_visibility:visibility; do
+                name=${db%%:*}; dir=${db##*:}
+
+                # CREATE AND SETUP MAY BOTH FAIL HARMLESSLY, and only because
+                # the reason is known: on every start after the first the
+                # database and the schema_version row already exist. Neither
+                # drops anything, so "already there" is the expected answer.
+                temporal-sql-tool --db "$name" create-database || true
+                temporal-sql-tool --db "$name" setup-schema -v 0.0 || true
+
+                # UPDATE IS NOT ALLOWED TO FAIL. This is the step that makes an
+                # upgrade an upgrade, and swallowing it would start a server
+                # against a schema older than itself -- which fails later,
+                # further away, and looks like something else.
+                temporal-sql-tool --db "$name" update-schema \
+                  -d "$base/$dir/versioned"
+              done
+          env:
+            - name: DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: andyur-temporal-secrets, key: db-password}}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            readOnlyRootFilesystem: true
+      containers:
+        # THE AUTHORIZER, and the only listener on the pod network. See the
+        # `andyur-temporal-authz` ConfigMap for what it admits and why. It
+        # holds the Workload API connection itself, so the SVID it serves
+        # rotates without a restart and without a file on disk.
+        - name: authz
+          image: docker.io/envoyproxy/envoy@sha256:d59f7f5fa10cff6d5892b6c5e7df5c9297ddfb2c3683e33fbfb82da24de4fa66
+          args: ["-c", "/config/envoy.yaml", "--disable-hot-restart"]
+          ports:
+            - {name: grpc, containerPort: 7233}
+          # A TCP connect is enough, and not a guess: Envoy does not open an
+          # SDS-dependent listener until the certificate has arrived, so a
+          # successful connect means the authorizer can serve.
+          readinessProbe:
+            tcpSocket: {port: grpc}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - {name: authz-config, mountPath: /config, readOnly: true}
+            - {name: authz-tmp, mountPath: /tmp}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+        - name: temporal
+          image: docker.io/temporalio/server@sha256:94dcdf51920fe894acff78694ad84e2ec3611ae5852f936fcccc1b67ce44dff0
+          env:
+            # EVERY SERVICE ON LOOPBACK, and the authorizer means nothing
+            # without this. The image's entrypoint otherwise binds all of them
+            # to the POD IP: frontend, history (7234), matching (7235) and the
+            # internal frontend (7236) -- the last plaintext and
+            # unauthenticated, with full administration. Bound there, any of
+            # them was a way round an authorizer on 7233, held shut only by the
+            # NetworkPolicy port allowlist. On loopback they are reachable from
+            # inside this Pod and nowhere else.
+            #
+            # This is a SINGLE-POD fact: loopback works because all five
+            # services share this Pod's network namespace.
+            - {name: BIND_ON_IP, value: "127.0.0.1"}
+            # The public frontend moves off 7233 so the authorizer can have it.
+            # Plaintext, on loopback, dialled only by the authorizer: TLS ends
+            # there, once, rather than twice inside one Pod.
+            #
+            # 7237, AND NOT 7243, which was the first choice and crash-looped
+            # the engine: 7243 is the frontend's own HTTP API port by default,
+            # so the frontend collided with itself ("bind: address already in
+            # use"). A local run against the dev server did not catch it; the
+            # dev server's HTTP port defaults differently.
+            - {name: FRONTEND_GRPC_PORT, value: "7237"}
+            - {name: TEMPORAL_ADDRESS, value: "127.0.0.1:7237"}
+            # THE INTERNAL FRONTEND is how the server's own `worker` role
+            # reaches the frontend. It was introduced when the frontend itself
+            # required client certificates (the system worker cannot present
+            # one); the frontend no longer does, but the internal one is kept
+            # because it is also what the readiness probe reads through, and
+            # removing it would change the engine's topology for no gain.
+            - {name: SERVICES, value: "frontend,internal-frontend,history,matching,worker"}
+            - {name: USE_INTERNAL_FRONTEND, value: "true"}
+            - {name: DB, value: postgres12}
+            - {name: POSTGRES_SEEDS, value: andyur-temporal-db}
+            - {name: DB_PORT, value: "5432"}
+            - {name: POSTGRES_USER, value: temporal}
+            - name: POSTGRES_PWD
+              valueFrom: {secretKeyRef: {name: andyur-temporal-secrets, key: db-password}}
+            - {name: DBNAME, value: temporal}
+            - {name: VISIBILITY_DBNAME, value: temporal_visibility}
+            # STATED RATHER THAN INHERITED. The template falls back to the
+            # non-visibility values, so a deployment that later splits the two
+            # databases apart would silently keep pointing both at one.
+            - {name: VISIBILITY_POSTGRES_SEEDS, value: andyur-temporal-db}
+            - {name: VISIBILITY_DB_PORT, value: "5432"}
+            - {name: VISIBILITY_POSTGRES_USER, value: temporal}
+            - name: VISIBILITY_POSTGRES_PWD
+              valueFrom: {secretKeyRef: {name: andyur-temporal-secrets, key: db-password}}
+            # CHOSEN ONCE AND NEVER AGAIN. The shard count is fixed for the life
+            # of the cluster: changing it means a new cluster and a migration,
+            # not a rollout. 512 is Temporal's own production default and is
+            # here because a number that cannot be revised should not be the
+            # smallest one that works today.
+            - {name: NUM_HISTORY_SHARDS, value: "512"}
+            - {name: DYNAMIC_CONFIG_FILE_PATH, value: /etc/temporal/dynamic/dynamic_config.yaml}
+            # Prometheus, scraped by the collector already in this cluster, and
+            # the one Temporal port deliberately left on the pod network: the
+            # NetworkPolicy admits the collector alone to it.
+            - {name: PROMETHEUS_ENDPOINT, value: "0.0.0.0:9090"}
+            - {name: LOG_LEVEL, value: info}
+          ports:
+            - {name: metrics, containerPort: 9090}
+          # READY MEANS IT CAN SERVE, and a TCP connect did not mean that. The
+          # frontend accepts connections whether or not Postgres is up or
+          # history is serving, so a connect probe stays green through exactly
+          # the failures an operator most needs to see. This lists one workflow
+          # through the in-pod internal frontend, which reads the visibility
+          # store: no database, not Ready.
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - >-
+                  temporal workflow list --namespace andyur --limit 1
+                  --address 127.0.0.1:7236 >/dev/null 2>&1
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+          # LIVENESS STAYS PROCESS-LEVEL, deliberately unlike readiness.
+          # Restarting the engine because Postgres blipped would turn a
+          # database outage into a restart loop, and every restart is a full
+          # shard reacquisition. The frontend is on loopback, which the kubelet
+          # cannot dial, so the connect is made from inside the container.
+          livenessProbe:
+            exec:
+              command: ["nc", "-z", "127.0.0.1", "7237"]
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests: {cpu: 200m, memory: 512Mi}
+            limits: {cpu: 2000m, memory: 2Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: dynamic, mountPath: /etc/temporal/dynamic}
+      volumes:
+        - name: dynamic
+          configMap: {name: andyur-temporal-dynamic-config}
+        - name: authz-config
+          configMap: {name: andyur-temporal-authz}
+        - {name: authz-tmp, emptyDir: {}}
+        - name: spiffe-workload-api
+          csi: {driver: csi.spiffe.io, readOnly: true}
+---
+# THE NAMESPACE, AND ITS RETENTION. Temporal's own namespace, not Kubernetes's.
+# Registered by a Job rather than by the server at boot, so that the retention
+# a deployment runs under is a thing someone decided and can read back.
+#
+# SEVEN DAYS, and it bounds CLOSED executions only. It was thirty, and at
+# thirty the database filled at about seven live runs; see the volume below. A running workflow is not
+# touched by it, which is the answer to the obvious question: retention is not
+# what stops a long-lived agent's history growing -- `continue_as_new` is, and
+# that lives in the workflow.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: andyur-temporal-namespace
+  namespace: andyur-system
+spec:
+  backoffLimit: 20
+  # CLEANED UP QUICKLY, because a finished Job pod is not inert. It sits in
+  # `Succeeded` with Ready=False forever, and the in-cluster gates wait on
+  # `pod --all` in this namespace -- so a ten-minute TTL meant ten minutes
+  # after every deploy where an unrelated gate timed out waiting for a pod that
+  # had already done its job. Short enough not to litter, long enough that
+  # `kubectl logs job/andyur-temporal-namespace` still answers right after a
+  # deploy.
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      labels: {app: andyur-temporal-namespace}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: andyur-temporal
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        - name: svid-bootstrap
+          image: ghcr.io/spiffe/spiffe-helper@sha256:1c92e5998ad3621e3323f25aabe40f5a88ba730ee0edb248aa8c943ca504e8a2
+          args: ["-config", "/conf/helper.conf", "-daemon-mode=false"]
+          volumeMounts:
+            - {name: svid, mountPath: /svid}
+            - {name: spiffe-helper-conf, mountPath: /conf, readOnly: true}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            readOnlyRootFilesystem: true
+      containers:
+        - name: register
+          image: docker.io/temporalio/admin-tools@sha256:f048113e98748c6b902e1962e3225082f42a4760467aaeda139e67c4aa692231
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              export TEMPORAL_ADDRESS=andyur-temporal:7233
+
+              # FLAGS AFTER THE SUBCOMMAND, NOT ENVIRONMENT, and both halves
+              # of that were wrong once. The CLI's TLS settings are
+              # `--tls-cert-path` and friends; the obvious `TEMPORAL_TLS_CERT`
+              # guessed from the server's own variable names is not one of
+              # them, and an unrecognised export is silent -- the client simply
+              # connected without a certificate and the frontend refused it,
+              # which reads as "the frontend never answered". They are also
+              # SUBCOMMAND flags: `temporal --tls operator ...` is rejected
+              # outright with "unknown flag: --tls".
+              TLS="--tls --tls-cert-path /svid/tls.crt --tls-key-path /svid/tls.key --tls-ca-path /svid/ca.crt"
+
+              # The Job may start before the frontend answers; `backoffLimit`
+              # would retry, but a readiness wait keeps the failure count
+              # meaningful for the case that is actually wrong.
+              #
+              # IT SAYS SO WHILE IT WAITS. The first version looped silently,
+              # and when a missing NetworkPolicy left it with no egress at all
+              # it sat there for six minutes producing no output -- a pod that
+              # is wedged and a pod that is working look identical if neither
+              # says anything.
+              i=0
+              until temporal operator cluster health $TLS >/dev/null 2>&1; do
+                i=$((i + 1))
+                [ "$i" -gt 60 ] && { echo "the frontend never answered"; exit 1; }
+                [ $((i % 5)) -eq 1 ] && echo "waiting for the frontend (attempt $i)"
+                sleep 2
+              done
+
+              # ALREADY REGISTERED IS SUCCESS. This runs on every deploy, and a
+              # second deploy must not fail because the first one worked.
+              if temporal operator namespace describe --namespace andyur $TLS >/dev/null 2>&1; then
+                echo "namespace andyur exists; reconciling retention"
+                temporal operator namespace update --namespace andyur --retention 7d $TLS
+              else
+                temporal operator namespace create --namespace andyur --retention 7d $TLS
+              fi
+              temporal operator namespace describe --namespace andyur $TLS
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          volumeMounts:
+            - {name: svid, mountPath: /svid, readOnly: true}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            readOnlyRootFilesystem: true
+      volumes:
+        - {name: svid, emptyDir: {}}
+        - name: spiffe-helper-conf
+          configMap: {name: andyur-temporal-spiffe-helper}
+        - name: spiffe-workload-api
+          csi: {driver: csi.spiffe.io, readOnly: true}
+---
+# THE ENGINE IS NOT ON THE RUN PATH, and this is the first of its two barriers.
+# Ingress is the control plane (which hosts the workflow worker) and the
+# registration Job; the runs namespace is not in the list and cannot be,
+# because an agent Pod that could reach the engine could schedule work as the
+# platform. The second barrier is the authorizer's SPIFFE-ID allowlist, and the
+# two are deliberately the same list: a Pod admitted here with any other
+# identity is still refused there, and an identity allowed there is still
+# unreachable from anywhere this does not admit.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: temporal
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-temporal}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        # THE CONTROL PLANE AND THE REGISTRATION JOB, AND NOTHING ELSE.
+        # `app: andyur-worker` was here, and that is the run-LAUNCHING daemon,
+        # which never constructs a workflow provider. The comment above said
+        # "the workflow worker", which is a container inside the andyur-server
+        # Pod -- the two share a word and nothing else, and the grant went to
+        # the component the agent's runtime is nearest to.
+        - podSelector: {matchLabels: {app: andyur-server}}
+        - podSelector: {matchLabels: {app: andyur-temporal-namespace}}
+        - podSelector: {matchLabels: {app: andyur-temporal-execution-worker}}
+      ports: [{protocol: TCP, port: 7233}]
+    # Metrics are readable by the collector ALONE. A metrics port is still a
+    # port, and "it is only Prometheus data" is an assumption about what the
+    # engine will expose next rather than a property of this policy.
+    - from:
+        - podSelector: {matchLabels: {app: otel-collector}}
+      ports: [{protocol: TCP, port: 9090}]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector: {matchLabels: {app: andyur-temporal-db}}
+      ports: [{protocol: TCP, port: 5432}]
+---
+# THE REGISTRATION JOB NEEDS ITS OWN EGRESS, because `default-deny` in this
+# namespace selects every pod: a component without a policy of its own has no
+# route anywhere, DNS included. The first version of this file left the Job out
+# and it hung, which is the policy working and the manifest being incomplete.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: temporal-namespace-job
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-temporal-namespace}}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector: {matchLabels: {app: andyur-temporal}}
+      ports: [{protocol: TCP, port: 7233}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: temporal-db
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-temporal-db}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: andyur-temporal}}
+      ports: [{protocol: TCP, port: 5432}]
+  egress: []

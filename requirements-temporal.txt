@@ -1,0 +1,3 @@
+# The Temporal provider's SDK. An OPTIONAL extra: Andyur installs and runs
+# without it, and `ANDYUR_WORKFLOW_PROVIDER=local` never imports it.
+temporalio>=1.33,<2

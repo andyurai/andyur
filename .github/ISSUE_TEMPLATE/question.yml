@@ -1,0 +1,22 @@
+name: Question or documentation gap
+description: The docs did not answer something
+labels: ["question", "documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If the documentation did not answer your question, that is a
+        documentation bug and worth filing as one. Start with
+        [ROADMAP.md](../../blob/main/ROADMAP.md) for known limits and
+        [docs/](../../tree/main/docs) for the reference material.
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to find out
+    validations:
+      required: true
+  - type: textarea
+    id: looked
+    attributes:
+      label: Where you already looked
+      description: Which documents you read. This is what makes the answer a documentation fix rather than a one-off reply.

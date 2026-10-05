@@ -1,0 +1,13 @@
+{
+  "instructions": "You are running headless inside a governed sandbox with no network except the model and the andyur tool service. Read the incident below, write a three-sentence summary of what most likely happened and what to check first, and end your reply with the exact line: GOOSE DONE",
+  "incident": {
+    "service": "payments-etl",
+    "severity": "critical",
+    "symptom": "the nightly payments_etl job fails with repeated 'connection refused' errors against the postgres primary since 02:10 UTC",
+    "recent_change": "a database maintenance window rotated the primary's TLS certificate at 02:00 UTC",
+    "dashboards": [
+      "etl-throughput",
+      "postgres-connections"
+    ]
+  }
+}

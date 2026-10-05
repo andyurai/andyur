@@ -1,0 +1,395 @@
+{
+  "acceptance": "#1",
+  "adr": "adr-011",
+  "demo": "demos/opensre",
+  "dispatch": "engine",
+  "elapsed_seconds": 201,
+  "error": null,
+  "expected_output_present": true,
+  "expected_output_substring": "root_cause",
+  "finished_at_epoch": 1790037326,
+  "gate": "exec-opensre-in-cluster",
+  "host": "macOS-14.8.3-arm64-arm-64bit",
+  "images": {
+    "llm_mode": "ollama",
+    "otel": {
+      "endpoint": "http://otel-collector.andyur-system.svc:4318",
+      "mode": "on",
+      "server_mode": "on"
+    },
+    "profile": "prod",
+    "proxy": "localhost:5000/andyur-runner@sha256:2c2e23a27c7085b02a4d3ef1a49c2e56ade0a0f77a94e717c6c9e8fbe6f41fd2",
+    "registry": "governed",
+    "registry_ref": "host.lima.internal:5000/andyur-registry@sha256:4badac078fe4a2354a59829aa636297ef7d360a80bfe455d48e6bf50a1b948b1",
+    "require_run_svid": "on",
+    "server": "localhost:5000/andyur-server@sha256:6e0ee495eac17e96d3d1b1890ac726c3acd1046a32ee704a393d86004b53794b",
+    "worker": "localhost:5000/andyur-worker@sha256:e548967f786052cc87d80521cb0d8a1ee86742a483c65cb778afd458b41c89f1"
+  },
+  "launcher": "deployment/andyur-temporal-execution-worker",
+  "mcp_refusals_observed": [],
+  "ok": true,
+  "preexisting_run_resources": [
+    "lease.coordination.k8s.io/andyur-run-6a2176545281e036682ac5155491c05f-owner",
+    "lease.coordination.k8s.io/andyur-run-6cc2c4886eeab163455ede39ee0a5e8c-owner",
+    "lease.coordination.k8s.io/andyur-run-9be20c412b550e8f147600d3b354d1ed-owner",
+    "lease.coordination.k8s.io/andyur-run-d9c05a59ccfa0743c645eed2a72e5204-owner"
+  ],
+  "run_id": "f595f34a42294879abf35aed2eb52192",
+  "run_resources_gone": true,
+  "run_resources_leftover": [],
+  "source_sha256": {
+    "andyur/daemon/daemon.py": "3f5a4faecdd0b74f1f70ff7ea4aad7e61c2245ebd109abbd96a61327e360d3a9",
+    "andyur/daemon/governed_kubernetes.py": "0ee8ecc96ec87df3123f0b5449ea7486923c73bfe7536a1e8fdf8711eb6daf61",
+    "andyur/daemon/kubernetes_controller.py": "b03dbe757e75d13c49846180178caeaeace4a71f35b551edfa54ee0c97d91b52",
+    "andyur/daemon/kubernetes_manifests.py": "a811c5296bbf02caea11c12b75f0e6f2423c0e09044262ea8d3cd4d4d437b33a",
+    "andyur/modelpolicy.py": "ade34aa2f8b32e5637a22b08c98ab6fb0763256f19621d3fd72460b133c3652c",
+    "andyur/runner/execfront.py": "8b178beb43a90874ad17570a87ad8fb050d0e80576a2a01211433c06a7d94bf3",
+    "andyur/runner/runner.py": "6124eafe1783b8f64178d4ddcbb974dc039a091e2c89cf7906f9e65cf5d7f851",
+    "demos/opensre/agent.json": "43de15a98dad8819af35909f9dc57662786563ec7db2d4f39698bec045942454",
+    "demos/opensre/alert.json": "42df341d344220b0d350a73895840803f8eb8f997d39e4a40818c66dcf123052",
+    "infra/kubernetes/control-plane.yaml": "34eed644ee537b6342fa8d8b76df5ef78d2b02a62a206bd9a9c104a8f8b82998",
+    "infra/kubernetes/lib/gate.sh": "d0322c19197ca5d1effa5cb4f5aeccdd372a74c3aa13c84c60f4a89a4952fb14",
+    "infra/kubernetes/observability.yaml": "31403d8fbd9a8c627f49f257afc78dc48e5ea23df5351a1fb6dd19f1327e484d",
+    "infra/kubernetes/run-isolation.yaml": "e82a8fb71cf10899ced38a584ffcc1350450859f8ff27806cf247482d49fc1de",
+    "infra/kubernetes/verify-exec-workload.sh": "4fd1312d648ae0d724adaa7e8509039b993f4317f77062a7808dca88a4c37e1d",
+    "infra/observability/jaeger.yaml": "67533c071969b27be7e59162f1f9d502273b3a08d0383f020495ea111d9935a9",
+    "infra/observability/otel-collector.yaml": "9b221c5338cac52894a1793eac62f68ad0bdacc9205d47562abf24370cc414e7",
+    "infra/observability/trace_readback.py": "dd0a988097216c4a3fdf280aa73bbf0ed4d55439f49fb98b0d656251943b720a"
+  },
+  "started_at_epoch": 1790037125,
+  "state": "done",
+  "summary_bytes": 5888,
+  "summary_excerpt": "  \u2026 Loading integrations\n  \u25cf Loading integrations  0ms  No auth context and no local integrations found (store: None, env fallback checked)\n  \u2026 Reading alert\n\nAlert     High error rate in payments ETL\nSeverity  critical\n\n  \u25cf Reading alert  60.1s\n  \u2026 Investigation\n1:23        \u21b3  Slack \u00b7 capture task  46ms\n  \u25cf Investigation  83.7s  evidence:1 messages:7\n  \u2026 Diagnosing\n  \u25cf Diagnosing  31.9s  confiden",
+  "tool_calls_observed": [],
+  "trace": {
+    "dangling_parent_spans": [],
+    "expected": [
+      "run opensre-sre",
+      "server.start_run",
+      "server.worker_finish_run",
+      "daemon.launch",
+      "daemon.exec_completion",
+      "controller.wait_ready",
+      "controller.delete",
+      "runner opensre-sre",
+      "runner.prepare",
+      "runner.prompt",
+      "runner.execute",
+      "runner.serve",
+      "execfront POST"
+    ],
+    "expected_missing": [],
+    "expected_present": true,
+    "root_spans": [
+      "server.request POST"
+    ],
+    "services": [
+      "andyur-execution-worker",
+      "andyur-runner",
+      "andyur-server"
+    ],
+    "span_count": 26,
+    "span_names": [
+      "CompleteWorkflow:AndyurExecution",
+      "RunActivity:execute_run",
+      "RunWorkflow:AndyurExecution",
+      "StartActivity:execute_run",
+      "StartWorkflow:AndyurExecution",
+      "controller.attach",
+      "controller.delete",
+      "controller.wait_ready",
+      "daemon.cleanup",
+      "daemon.exec_completion",
+      "daemon.launch",
+      "execfront POST",
+      "run opensre-sre",
+      "runner opensre-sre",
+      "runner.execute",
+      "runner.prepare",
+      "runner.prompt",
+      "runner.serve",
+      "server.execute_run_claim",
+      "server.request POST",
+      "server.start_run",
+      "server.worker_finish_run"
+    ],
+    "spans": [
+      {
+        "attributes": {},
+        "name": "RunWorkflow:AndyurExecution",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {},
+        "name": "StartActivity:execute_run",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "opensre-sre",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "andyur.run_type": "work",
+          "andyur.user": "33333333-3333-3333-3333-333333333333"
+        },
+        "name": "run opensre-sre",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.external": true,
+          "http.request.method": "POST",
+          "http.response.status_code": 201
+        },
+        "name": "server.request POST",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.outcome": "launch",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192"
+        },
+        "name": "server.execute_run_claim",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {},
+        "name": "StartWorkflow:AndyurExecution",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {},
+        "name": "runner.prepare",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {},
+        "name": "runner.prompt",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {},
+        "name": "server.start_run",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.operation": "wait_ready",
+          "andyur.outcome": "ready",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "andyur.seconds": 10.322,
+          "andyur.timeout_seconds": 60
+        },
+        "name": "controller.wait_ready",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.input_bytes": 341,
+          "andyur.input_mode": "stdin",
+          "andyur.operation": "attach",
+          "andyur.outcome": "delivered",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "andyur.seconds": 3.524
+        },
+        "name": "controller.attach",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "opensre-sre",
+          "andyur.orchestrator": "kubernetes",
+          "andyur.outcome": "success",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "andyur.runner_pid": 0,
+          "andyur.sandbox": true,
+          "andyur.worker_id": "execution-andyur-temporal-execution-worker-67cbb79ddd-ktnh5-1"
+        },
+        "name": "daemon.launch",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "opensre-sre",
+          "andyur.decision": "forwarded",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.refusal": "none",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "gen_ai.request.model": "qwen3-andyur:latest",
+          "http.request.method": "POST",
+          "http.response.status_code": 200,
+          "http.upstream.status_code": 200
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "opensre-sre",
+          "andyur.decision": "forwarded",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.refusal": "none",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "gen_ai.request.model": "qwen3-andyur:latest",
+          "http.request.method": "POST",
+          "http.response.status_code": 200,
+          "http.upstream.status_code": 200
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "opensre-sre",
+          "andyur.decision": "forwarded",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.refusal": "none",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "gen_ai.request.model": "qwen3-andyur:latest",
+          "http.request.method": "POST",
+          "http.response.status_code": 200,
+          "http.upstream.status_code": 200
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "opensre-sre",
+          "andyur.decision": "forwarded",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.refusal": "none",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "gen_ai.request.model": "qwen3-andyur:latest",
+          "http.request.method": "POST",
+          "http.response.status_code": 200,
+          "http.upstream.status_code": 200
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "opensre-sre",
+          "andyur.decision": "forwarded",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.refusal": "none",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "gen_ai.request.model": "qwen3-andyur:latest",
+          "http.request.method": "POST",
+          "http.response.status_code": 200,
+          "http.upstream.status_code": 200
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.serve.exit": "sigterm",
+          "andyur.serve.ttl_seconds": 1800
+        },
+        "name": "runner.serve",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.llm_mode": "ollama",
+          "andyur.model": "qwen3-andyur:latest"
+        },
+        "name": "runner.execute",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "opensre-sre",
+          "andyur.agent_spiffe_id": "spiffe://andyur.local/agent/opensre-sre",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "andyur.split": true,
+          "andyur.workflow_id": "wf-0ac40f17d402"
+        },
+        "name": "runner opensre-sre",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.result": "done"
+        },
+        "name": "server.worker_finish_run",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.capture_bound_bytes": 1048576,
+          "andyur.captured_bytes": 5889,
+          "andyur.exit_code": 0,
+          "andyur.finish": "confirmed",
+          "andyur.finish.seconds": 0.016,
+          "andyur.result": "done",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "andyur.worker_id": "execution-andyur-temporal-execution-worker-67cbb79ddd-ktnh5-1"
+        },
+        "name": "daemon.exec_completion",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.generation": "exec-8089fac685b7ffff",
+          "andyur.operation": "delete",
+          "andyur.outcome": "deleted",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "andyur.seconds": 1.6,
+          "andyur.timeout_seconds": 30
+        },
+        "name": "controller.delete",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.outcome": "success",
+          "andyur.run_id": "f595f34a42294879abf35aed2eb52192",
+          "andyur.worker_id": "execution-andyur-temporal-execution-worker-67cbb79ddd-ktnh5-1"
+        },
+        "name": "daemon.cleanup",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {},
+        "name": "RunActivity:execute_run",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {},
+        "name": "CompleteWorkflow:AndyurExecution",
+        "service": "andyur-execution-worker"
+      }
+    ],
+    "trace_id": "4420374b42f49ed4b75b8e149bfb3331",
+    "waited_seconds": 6.1
+  },
+  "trace_ok": true,
+  "worker_log_tail": "72+00:00\",\"trace_id\":\"4420374b42f49ed4b75b8e149bfb3331\"}\n{\"event\":\"log.message\",\"logger\":\"httpx\",\"message\":\"HTTP Request: GET http://andyur-server.andyur-system.svc:8642/runs/f595f34a42294879abf35aed2eb52192/execution \\\"HTTP/1.1 200 OK\\\"\",\"schema\":\"andyur.log.v1\",\"service\":\"andyur-execution-worker\",\"severity\":\"INFO\",\"span_id\":\"ac6d7567329a8a98\",\"timestamp\":\"2026-09-22T00:35:19.661793+00:00\",\"trace_id\":\"4420374b42f49ed4b75b8e149bfb3331\"}\n{\"event\":\"log.message\",\"logger\":\"httpx\",\"message\":\"HTTP Request: POST http://andyur-server.andyur-system.svc:8642/runs/f595f34a42294879abf35aed2eb52192/worker-finish \\\"HTTP/1.1 200 OK\\\"\",\"schema\":\"andyur.log.v1\",\"service\":\"andyur-execution-worker\",\"severity\":\"INFO\",\"span_id\":\"72764264717d731f\",\"timestamp\":\"2026-09-22T00:35:24.696435+00:00\",\"trace_id\":\"4420374b42f49ed4b75b8e149bfb3331\"}\n{\"event\":\"log.message\",\"logger\":\"andyur.daemon\",\"message\":\"[daemon] run f595f34a42294879abf35aed2eb52192: exec/v1 completion reported (done)\",\"schema\":\"andyur.log.v1\",\"service\":\"andyur-execution-worker\",\"severity\":\"INFO\",\"span_id\":\"72764264717d731f\",\"timestamp\":\"2026-09-22T00:35:24.697010+00:00\",\"trace_id\":\"4420374b42f49ed4b75b8e149bfb3331\"}\n{\"event\":\"log.message\",\"logger\":\"andyur.daemon\",\"message\":\"[daemon] run f595f34a42294879abf35aed2eb52192 exited with code 0\",\"schema\":\"andyur.log.v1\",\"service\":\"andyur-execution-worker\",\"severity\":\"INFO\",\"span_id\":\"ac6d7567329a8a98\",\"timestamp\":\"2026-09-22T00:35:26.297719+00:00\",\"trace_id\":\"4420374b42f49ed4b75b8e149bfb3331\"}",
+  "workload_image": {
+    "manifest_digest": "sha256:80e530dd06128d8b63016fbd371ac683c8744f1e187d14fbcfb5298ed4567cd2",
+    "node_pulled_digest": "sha256:80e530dd06128d8b63016fbd371ac683c8744f1e187d14fbcfb5298ed4567cd2",
+    "pinned": true
+  }
+}

@@ -1,0 +1,55 @@
+# OPA runtime configuration for Andyur's policy decision point.
+#
+# Three things are configured here, and each one closes a specific hole:
+#
+#   bundles         policy arrives by PULL from a bundle service, so the write
+#                   API is not merely denied (see system-authz.rego), it is not
+#                   needed. Policy still changes with no redeploy -- that
+#                   property moves from the write API to the bundle, which is
+#                   how OPA is meant to be run in production.
+#   signing         the bundle must carry a signature this engine can verify,
+#                   so compromising the bundle SERVER is not enough to change
+#                   authorization. Without this, locking the write API would
+#                   only move the attacker one hop sideways.
+#   decision_logs   every decision is emitted, so an authorization system that
+#                   silently changed its mind leaves evidence.
+#
+# Values marked ${...} are substituted from OPA's environment at startup, so no
+# secret and no environment-specific URL is committed in this file.
+
+services:
+  bundle_server:
+    url: ${OPA_BUNDLE_URL}
+
+bundles:
+  andyur:
+    service: bundle_server
+    resource: andyur-bundle.tar.gz
+    # Poll rather than push: OPA reaches out, so the engine needs no inbound
+    # write path at all. A new bundle is activated atomically, all-or-nothing,
+    # so policy is never half-applied while decisions are being served.
+    polling:
+      min_delay_seconds: 3
+      max_delay_seconds: 6
+    signing:
+      keyid: andyur_bundle_key
+      # The signature covers a scope claim as well as the file digests, so a
+      # bundle signed for a different purpose with the same key is refused here.
+      scope: andyur_policy
+
+keys:
+  andyur_bundle_key:
+    algorithm: RS256
+    # PUBLIC key only. The engine can verify a bundle but can never mint one,
+    # so an attacker who owns this container still cannot author policy. The
+    # value is a PEM with \n escapes, quoted so YAML unescapes it.
+    key: "${OPA_BUNDLE_PUBKEY}"
+
+decision_logs:
+  console: true
+  # An authorization audit trail is only useful if it says WHY, so the decision
+  # log carries the policy's own admin reason alongside the verdict. The masked
+  # paths below keep credentials out of the log: the subject's identity and
+  # granted scope are decision inputs, but writing them to a shared log stream
+  # would spread exactly the material the platform works to confine.
+  mask_decision: /system/log/mask

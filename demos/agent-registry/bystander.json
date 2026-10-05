@@ -1,0 +1,12 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_bystander",
+  "name": "bystander",
+  "instructions": "Represent a registered agent that is not the holder of another agent's grant.",
+  "model": null,
+  "tools": [],
+  "ceiling": {
+    "actions": null,
+    "resources": null
+  }
+}

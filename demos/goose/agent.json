@@ -1,0 +1,81 @@
+{
+  "apiVersion": "andyur.ai/v1",
+  "kind": "Agent",
+  "metadata": {
+    "id": "agt_goose",
+    "name": "goose-agent",
+    "version": "0.1.0"
+  },
+  "instructions": "Complete the task delivered on stdin inside the governed sandbox and report the result.",
+  "model": {
+    "requested": "qwen3-andyur:latest",
+    "access": "proxy"
+  },
+  "runtime": {
+    "type": "container",
+    "image": {
+      "ref": "ghcr.io/block/goose",
+      "digest": "sha256:d85a724ee487425f38ce015323adf2003591268ee515d9018ac89450ed7d3a5a"
+    },
+    "command": [
+      "goose",
+      "run",
+      "-i",
+      "-",
+      "--no-session",
+      "--max-turns",
+      "8",
+      "--output-format",
+      "json"
+    ],
+    "interface": {
+      "protocol": "exec/v1"
+    },
+    "lifecycle": {
+      "mode": "task",
+      "max_seconds": 1800
+    },
+    "process": {
+      "input": {
+        "mode": "stdin",
+        "max_bytes": 262144
+      },
+      "output": {
+        "stdout": "capture",
+        "stderr": "capture",
+        "max_bytes": 1048576
+      }
+    },
+    "configuration": {
+      "env": {
+        "GOOSE_PROVIDER": {
+          "literal": "openai"
+        },
+        "GOOSE_MODE": {
+          "literal": "auto"
+        },
+        "GOOSE_DISABLE_KEYRING": {
+          "literal": "1"
+        },
+        "OPENAI_API_KEY": {
+          "literal": "andyur-front"
+        },
+        "GOOSE_MODEL": {
+          "from": "services.model.name"
+        },
+        "OPENAI_HOST": {
+          "from": "services.model.base_url"
+        },
+        "HOME": {
+          "from": "workspace.home"
+        }
+      },
+      "files": [
+        {
+          "path": "${workspace.home}/.config/goose/config.yaml",
+          "template": "# Rendered by the platform before goose starts (exec/v1 configuration.files).\n# The ONLY tool goose is handed is the run's own MCP tool service, reached at\n# the URL and with the bearer the platform resolved for this run.\nGOOSE_PROVIDER: openai\nGOOSE_MODE: auto\nextensions:\n  andyur:\n    name: andyur\n    type: streamable_http\n    uri: ${services.tools.mcp_url}\n    headers:\n      Authorization: \"${services.tools.mcp_headers.Authorization}\"\n    enabled: true\n    timeout: 120\n"
+        }
+      ]
+    }
+  }
+}

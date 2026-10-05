@@ -1,0 +1,30 @@
+{
+  "apiVersion": "andyur.ai/v1",
+  "kind": "Agent",
+  "metadata": {"id": "agt_opensre", "name": "opensre-sre", "version": "0.1.0"},
+  "instructions": "Investigate the assigned alert and report the root cause.",
+  "model": {"requested": "qwen3-andyur:latest", "access": "proxy"},
+  "runtime": {
+    "type": "container",
+    "image": {
+      "ref": "ghcr.io/tracer-cloud/opensre",
+      "digest": "sha256:80e530dd06128d8b63016fbd371ac683c8744f1e187d14fbcfb5298ed4567cd2"
+    },
+    "command": ["opensre", "investigate", "-i", "-"],
+    "interface": {"protocol": "exec/v1"},
+    "lifecycle": {"mode": "task", "max_seconds": 1800},
+    "process": {
+      "input": {"mode": "stdin", "max_bytes": 262144},
+      "output": {"stdout": "capture", "stderr": "capture", "max_bytes": 1048576}
+    },
+    "configuration": {
+      "env": {
+        "LLM_PROVIDER": {"literal": "ollama"},
+        "OLLAMA_HOST": {"from": "services.model.base_url"},
+        "OLLAMA_MODEL": {"from": "services.model.name"},
+        "HOME": {"from": "workspace.home"},
+        "OPENSRE_TELEMETRY_ENABLED": {"literal": "false"}
+      }
+    }
+  }
+}

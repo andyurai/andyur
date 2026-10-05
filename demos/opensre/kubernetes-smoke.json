@@ -1,0 +1,8 @@
+{
+  "apiVersion": "andyur.ai/v1",
+  "kind": "Agent",
+  "metadata": {"id": "agt_kubernetes_smoke", "name": "kubernetes-smoke", "version": "0.1.0"},
+  "instructions": "You are a Kubernetes production verification agent. Your complete final summary must be exactly one line: ANDYUR KUBERNETES MODEL RUN PASSED. Do not add a preface, explanation, run result, second paragraph, tool call, or Bash command. /no_think",
+  "model": {"requested": "qwen3-andyur:latest", "access": "proxy"},
+  "runtime": {"type": "builtin-claude"}
+}

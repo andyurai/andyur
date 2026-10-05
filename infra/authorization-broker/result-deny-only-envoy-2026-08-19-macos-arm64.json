@@ -1,0 +1,48 @@
+{
+  "agent_socket_absent": true,
+  "app_image_id": "sha256:c294e4ade1ff7101bfc9866a3ad6b4ccc0b06bc86758e1cba1eccb277e3021d7",
+  "broker_bypass_mutation_red": {
+    "authority_calls": 0,
+    "dispatch": false,
+    "status": 403,
+    "transport_calls": 1
+  },
+  "broker_unavailable": {
+    "dispatch": false,
+    "elapsed_ms": 2.4,
+    "status": 403
+  },
+  "envoy_image": "docker.io/envoyproxy/envoy@sha256:d59f7f5fa10cff6d5892b6c5e7df5c9297ddfb2c3683e33fbfb82da24de4fa66",
+  "envoy_version": "envoy  version: 9aed67d36497690a0d0dc65305ab823927441b77/1.39.0/Clean/RELEASE/BoringSSL",
+  "mutation_red": {
+    "dispatch": true,
+    "status": 200
+  },
+  "platform": "macOS-14.8.3-arm64-arm-64bit",
+  "restored": {
+    "broker_calls": 4,
+    "dispatch": false,
+    "status": 403
+  },
+  "secure": {
+    "broker_calls": 4,
+    "dispatch": false,
+    "elapsed_ms": 6.5,
+    "status": 403
+  },
+  "secure_config_sha256": "60d29055c9e66624400ec6cbb8126224ffd4e2ebc8e0de902b2071639a7651a7",
+  "source_sha256": {
+    "andyur/dataplane/brokeruds.py": "da4f799655fb6044b97772e7817a0100e1d5dd356e758e43d31d819db213244d",
+    "andyur/dataplane/envoyconfig.py": "a244fcfce20c4933fd32cc63d158c984595a99e299608a48f9d43c7bb7b1c026",
+    "andyur/dataplane/extauthz.py": "95a492944dcd65bd0cfbf00d16978a7de2df761a9cf250ffb9c1228813abdb32",
+    "infra/authorization-broker/deny_broker_fixture.py": "94d643a0195e6d85725d6c039d8587aa97db05a2caaaba596918e5f2ddc36147",
+    "infra/authorization-broker/deny_only_envoy_gate.py": "2341446726f017808550f2c04554c0bbe09180636f7fccf9f64f41c1e97e21db",
+    "infra/authorization-broker/upstream_fixture.py": "ac7b6a12afc917357eb61f4c388c26276965c044f481737cc127fd4dff8276b5",
+    "infra/authorization-broker/verify-deny-only-envoy.sh": "d6fe48df3f0f3e725a5259cdfb8ae595cfc3c17a2eca58601037b33bbd6447d6"
+  },
+  "teardown_socket_absent": true,
+  "uds_attributes": [
+    "750 0 1337 directory",
+    "660 0 1337 socket"
+  ]
+}

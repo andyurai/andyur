@@ -1,0 +1,18 @@
+model_list:
+  # The public name is the immutable model value selected by the agent manifest.
+  # LiteLLM owns provider mapping; Andyur must forward this value unchanged.
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: anthropic/claude-haiku-4-5
+      api_base: os.environ/ANTHROPIC_API_BASE
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+litellm_settings:
+  callbacks:
+    - otel
+  # Prompts and completions are deliberately not copied into telemetry by
+  # default. They may contain incident/customer data.
+  turn_off_message_logging: true

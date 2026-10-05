@@ -1,0 +1,45 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_soc_exposure",
+  "name": "soc-exposure",
+  "instructions": "You report which of the packages named in your task have known vulnerabilities, and what fixes them. For each one, look it up at its exact version; pull the detail of anything that matches; and report the advisory id, what it affects, and the earliest version that fixes it. Group by package, and put the ones with a fix available first, because those are the ones somebody can act on today.\n\nSAY WHAT YOU CANNOT KNOW. Your source is the OSV database, which records advisories and affected version ranges. It does NOT tell you whether anything is being exploited in the wild, and it carries no exploit-likelihood score. So do not rank by real-world risk and do not imply you have: a severity rating is not evidence that anyone is using it. If asked which to fix first, answer on what you do have -- a fix exists, the version is reachable -- and say plainly that exploitation data is not in front of you. Report only what the tools return. Never use Bash.",
+  "model": null,
+  "tools": [
+    {
+      "name": "osv",
+      "reach_url": "http://host.docker.internal:8810/mcp",
+      "resource_id": "resource:vulns",
+      "authority": "managed",
+      "mcp_tools": [
+        {
+          "name": "query_vulnerability",
+          "requires": "vulns:read"
+        },
+        {
+          "name": "query_vulnerabilities_batch",
+          "requires": "vulns:read"
+        },
+        {
+          "name": "get_vulnerability",
+          "requires": "vulns:read"
+        }
+      ]
+    }
+  ],
+  "ceiling": {
+    "actions": [
+      "vulns:read"
+    ],
+    "resources": [
+      "resource:vulns"
+    ]
+  },
+  "card": {
+    "summary": "Reports which packages have known advisories and what version fixes each one.",
+    "category": "exposure management",
+    "requires": [
+      "StacklokLabs/osv-mcp (Apache-2.0) on :8810, run with MCP_TRANSPORT=streamable-http and MCP_PORT=8810 -- it defaults to SSE on 8080. It queries the public OSV API and needs no backend",
+      "a dev-profile control plane with ANDYUR_AGENT_AUTH=on and containerised runs -- the shape `./run.sh sre-demo` builds and the other registry agents already run under. reach_url is resolved from the RUNNER's namespace, which is why it names the host gateway, exactly as demos/agent-registry does"
+    ]
+  }
+}

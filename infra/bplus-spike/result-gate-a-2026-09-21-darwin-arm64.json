@@ -1,0 +1,96 @@
+{
+  "api_server_sha256": "103ffc7eb9febafc1aefe1fff1de5832cb8bbee82c4ecc42fec9e5b74424444f",
+  "checks": {
+    "after_launch_one_runtime": true,
+    "after_launch_retry_adopted": true,
+    "after_launch_runtime_existed_before_retry": true,
+    "after_launch_worker_a_died_hard": true,
+    "before_launch_nothing_before_retry": true,
+    "before_launch_one_runtime": true,
+    "before_launch_retry_launched": true,
+    "before_launch_worker_a_died_hard": true,
+    "foreign_generation_refused_not_retried": true,
+    "halted_run_refused": true,
+    "invented_run_refused": true,
+    "teardown_absent": true
+  },
+  "finished_at": "2026-09-21T17:21:34.016514+00:00",
+  "gate": "bplus-gate-a-idempotent-launch",
+  "platform": "macOS-14.8.3-arm64-arm-64bit",
+  "scenarios": {
+    "after_launch": {
+      "activity_attempts": 2,
+      "after": {
+        "leases": 1,
+        "runtimes": 1
+      },
+      "before_worker_b": {
+        "leases": 1,
+        "runtimes": 1
+      },
+      "result": {
+        "attempt": 2,
+        "outcome": "adopted",
+        "runtime_present": true,
+        "worker": "B"
+      },
+      "run_id": "fead0e791fa54b7a949412aacb3071db",
+      "worker_a_exit": 137
+    },
+    "before_launch": {
+      "activity_attempts": 2,
+      "after": {
+        "leases": 1,
+        "runtimes": 1
+      },
+      "before_worker_b": {
+        "leases": 0,
+        "runtimes": 0
+      },
+      "result": {
+        "attempt": 2,
+        "outcome": "launched",
+        "runtime_present": true,
+        "worker": "B"
+      },
+      "run_id": "28bf953a3c1948baaf448739740a34e8",
+      "worker_a_exit": 137
+    },
+    "foreign_generation": {
+      "activity_attempts": 1,
+      "error": "ApplicationError",
+      "leases": 1,
+      "message": "SecurityRefusal: run '9c77d1abda1e404f8787d061620e526c' is held by another generation: Kubernetes singleton Lease response was rewritten",
+      "run_id": "9c77d1abda1e404f8787d061620e526c",
+      "runtimes": 0,
+      "type": "SecurityRefusal"
+    },
+    "halted_run": {
+      "activity_attempts": 1,
+      "error": "ApplicationError",
+      "leases": 0,
+      "message": "SecurityRefusal: run '3cd00296172e46b8ad83aca43e4de617' is halted",
+      "run_id": "3cd00296172e46b8ad83aca43e4de617",
+      "runtimes": 0,
+      "type": "SecurityRefusal"
+    },
+    "invented_run": {
+      "activity_attempts": 1,
+      "error": "ApplicationError",
+      "leases": 0,
+      "message": "SecurityRefusal: no admitted run '0c40235ece0d4fc19231287aad9824b7'",
+      "run_id": "0c40235ece0d4fc19231287aad9824b7",
+      "runtimes": 0,
+      "type": "SecurityRefusal"
+    }
+  },
+  "source_sha256": {
+    "andyur/daemon/kubernetes_api.py": "bb72974d9f9daf825c48dfa0783f9e842f2cea042266ab9897d60fa70dfc7186",
+    "andyur/daemon/kubernetes_manifests.py": "a811c5296bbf02caea11c12b75f0e6f2423c0e09044262ea8d3cd4d4d437b33a",
+    "infra/bplus-spike/gate_a.py": "0ffe4f241df9597e92cd50684a1c7e00d2890cd0dc134eef5e3b3f244829c276",
+    "infra/bplus-spike/spike_worker.py": "f1f166915706b7f2624335ec2813adf56671d449921e0bb7fde75902d1a75f25"
+  },
+  "started_at": "2026-09-21T17:20:55.242223+00:00",
+  "temporal_address": "localhost:7233",
+  "verdict": "PASS"
+}

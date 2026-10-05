@@ -1,0 +1,135 @@
+# Sandboxed agent-runner image. Each agent run executes inside a container
+# built from this image, giving a per-run security boundary: the agent's Bash
+# and file tools run here, not on the host. No host filesystem is mounted at
+# all: the agent's mind lives in object storage behind the server, which the
+# runner reaches over HTTP, so the container needs zero host access.
+#
+# Two uids: the runner (supervisor) enters as root so it can drop the UNTRUSTED
+# agent to its own unprivileged uid (1001); root is contained by --cap-drop ALL
+# (only SETUID/SETGID restored), no-new-privileges, and no host mounts. The agent
+# -- arbitrary code -- never shares the runner's uid, so it cannot read the
+# runner's /proc (where the per-run token lives).
+FROM python:3.12-slim
+
+ARG CLAUDE_CODE_VERSION=2.1.220
+
+# Node + the Claude Code CLI (the Claude Agent SDK spawns `claude`).
+# util-linux supplies setpriv, used to drop the agent to its own uid (see below).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates util-linux \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+    && apt-get purge -y curl && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Runner Python dependencies. No DATABASE deps: the runner only talks HTTP.
+#
+# fastapi + uvicorn are here because the runner SERVES as well as calls: it runs
+# the loopback model proxy that holds the run's provider credential so the agent
+# never has one (andyur/runner/modelproxy.py). runner.py imports that module at
+# top level, so without these the runner does not start AT ALL under
+# ANDYUR_SANDBOX=on -- the configuration production requires. That is exactly
+# what shipped, because nothing had ever run the end-to-end inside a container.
+# `./run.sh e2e sandbox` now does, and a unit test asserts this list covers what
+# the runner imports.
+#
+# spiffe = the Workload API client, so a run in its container can fetch and
+# present its per-run SVID when ANDYUR_IDENTITY is on (Slice 4 round-trip).
+# mcp is pinned HERE as well as in requirements.txt, and to the SAME range
+# (tests/test_kubernetes_packaging.py binds the two): the runner SERVES the
+# platform tools over streamable-HTTP (runner/toolservice.py) on mcp's 1.x
+# server API, and claude-agent-sdk leaves the choice open -- an unpinned build
+# on 2026-08-26 took mcp 2.x, under which the tool service cannot even import.
+# Found by the exec/v1 tool-call gate running the REAL image.
+RUN pip install --no-cache-dir \
+    "claude-agent-sdk>=0.1" "mcp>=1.28,<2" "httpx>=0.27" "python-dotenv>=1.0" \
+    "fastapi>=0.110" "uvicorn>=0.30" \
+    "opentelemetry-sdk>=1.27" "opentelemetry-exporter-otlp-proto-http>=1.27" \
+    "spiffe>=0.3,<0.4"
+
+WORKDIR /app
+COPY andyur ./andyur
+
+# Two uids, not one. The runner supervises; the agent is arbitrary untrusted code
+# (Claude Code with Bash). Historically both ran as the same uid, which let the
+# agent read the runner's /proc/1/environ and lift the per-run token out of it.
+# Splitting them is what closes that: /proc/<pid>/environ is only readable by the
+# process owner, so an agent at uid 1001 cannot read the runner's.
+RUN useradd --create-home --home-dir /home/runner --uid 1000 runner \
+    && useradd --create-home --home-dir /home/agent --uid 1001 agent \
+    && chown -R runner:runner /app
+
+# Defense in depth: strip every setuid/setgid bit in the image (su, mount, passwd,
+# chsh, ...). The agent runs with no capabilities, so today no-new-privileges already
+# stops it turning a setuid-root binary into a root shell -- but that would make the
+# whole uid split hinge on the daemon never forgetting --security-opt no-new-privileges.
+# Removing the bits means even a run without nnp cannot escalate this way. setpriv is
+# unaffected: it drops privilege via the runner's CAP_SETUID, not via a setuid bit.
+RUN find / -xdev \( -perm -4000 -o -perm -2000 \) -exec chmod -s {} + 2>/dev/null || true
+ENV HOME=/home/runner
+
+# The spawn hook: the SDK launches the CLI via ClaudeAgentOptions.cli_path, so we
+# point it at this wrapper, which drops to the agent uid and then execs the real
+# CLI. Fails closed -- if setpriv cannot drop privileges the agent does not run,
+# rather than silently running with the runner's uid.
+# The CLI's path is resolved at BUILD time (npm's global bin dir moves between
+# base images: nodesource puts it at /usr/bin, not /usr/local/bin). Baking the
+# resolved path in keeps the wrapper independent of the agent's PATH, and the
+# build fails loudly here if a future base image moves it again.
+RUN CLAUDE_BIN="$(command -v claude)" \
+    && [ -n "$CLAUDE_BIN" ] || { echo "claude CLI not found; wrapper would break"; exit 1; } \
+    && printf '%s\n' \
+    '#!/bin/sh' \
+    '# Drop from the runner uid to the unprivileged agent uid, then exec the real' \
+    '# Claude Code CLI. Requires CAP_SETUID (the daemon restores only SETUID/SETGID).' \
+    '# Fails closed: if privileges cannot be dropped, the agent does not run.' \
+    'set -e' \
+    "exec setpriv --reuid=1001 --regid=1001 --clear-groups \"\${ANDYUR_CLAUDE_BIN:-$CLAUDE_BIN}\" \"\$@\"" \
+    > /usr/local/bin/andyur-agent-claude \
+    && chmod 0755 /usr/local/bin/andyur-agent-claude \
+    && grep -q "$CLAUDE_BIN" /usr/local/bin/andyur-agent-claude
+# Tells the runner the wrapper is available; absent => no uid split (unit tests, dev).
+ENV ANDYUR_AGENT_CLI=/usr/local/bin/andyur-agent-claude
+
+# The egress credential broker. It runs HERE, in the run container, beside the
+# runner -- not in the server or daemon image, which never launch it. Without it
+# every tool declaring `andyur.audience` is withheld, and a withheld tool is
+# indistinguishable from one the agent was never granted, so the absence would be
+# silent. Pinned by version AND checksum because this binary holds the run token.
+#
+# `./run.sh sandbox-image` passes a pinned version and per-arch checksums, so the
+# obvious build includes it. Building this file directly with no args omits it;
+# such an image still runs and still withholds, naming the reason. A version with
+# NO checksum for the target arch is refused rather than installed unverified --
+# "pinned by version and checksum" has to be true, not aspirational.
+ARG ANDYUR_AGENTGATEWAY_VERSION=""
+ARG ANDYUR_AGENTGATEWAY_SHA256_AMD64=""
+ARG ANDYUR_AGENTGATEWAY_SHA256_ARM64=""
+RUN set -eu; \
+    if [ -n "$ANDYUR_AGENTGATEWAY_VERSION" ]; then \
+      arch="$(dpkg --print-architecture)"; \
+      case "$arch" in \
+        amd64) asset="agentgateway-linux-amd64"; want="$ANDYUR_AGENTGATEWAY_SHA256_AMD64" ;; \
+        arm64) asset="agentgateway-linux-arm64"; want="$ANDYUR_AGENTGATEWAY_SHA256_ARM64" ;; \
+        *) echo "no agentgateway asset for $arch" >&2; exit 1 ;; \
+      esac; \
+      if [ -z "$want" ]; then \
+        echo "refusing to install an unverified agentgateway: no checksum for $arch" >&2; \
+        exit 1; \
+      fi; \
+      apt-get update && apt-get install -y --no-install-recommends curl ca-certificates; \
+      curl -fsSL -o /usr/local/bin/agentgateway \
+        "https://github.com/agentgateway/agentgateway/releases/download/v${ANDYUR_AGENTGATEWAY_VERSION}/${asset}"; \
+      echo "${want}  /usr/local/bin/agentgateway" | sha256sum -c -; \
+      chmod 0755 /usr/local/bin/agentgateway; \
+      /usr/local/bin/agentgateway --version; \
+      apt-get purge -y curl && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*; \
+    fi
+
+# Entry runs as root ON PURPOSE: dropping to another uid needs CAP_SETUID, which
+# --cap-drop ALL removes. The daemon restores ONLY SETUID/SETGID and keeps
+# no-new-privileges (which blocks *gaining* privilege via execve, not *dropping*
+# to a lower uid). Net: the untrusted agent is unprivileged and isolated from the
+# runner, inside a container with no host mounts and no other capabilities.
+ENTRYPOINT ["python", "-m", "andyur.runner"]

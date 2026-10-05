@@ -1,0 +1,19 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_specialist",
+  "name": "specialist",
+  "instructions": "Handle work delegated by the classifier within the authority carried by the run.",
+  "model": null,
+  "tools": [
+    {
+      "name": "bank",
+      "reach_url": "http://authority-tool:8080/mcp",
+      "resource_id": "tool:bank",
+      "authority": "managed"
+    }
+  ],
+  "ceiling": {
+    "actions": null,
+    "resources": null
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "alice": {
+    "entitlements": ["telemetry:read", "tickets:read", "tickets:write"],
+    "resources": ["checkout", "incidents"]
+  },
+  "bob": {
+    "entitlements": ["telemetry:read"],
+    "resources": ["payments"]
+  }
+}

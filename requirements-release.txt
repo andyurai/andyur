@@ -1,0 +1,23 @@
+# Release TOOLING. Deliberately not requirements.txt or requirements-dev.txt.
+#
+# RELEASING.md explains why these live apart: release tools must never perturb
+# the environment the test suite was certified in, and a contributor cloning
+# this repo should not install an SBOM generator they will never invoke. What
+# was missing was any way to CREATE that environment -- `.venv-release/` is
+# gitignored, nothing built it, and no file said what belonged in it, so
+# `build_release.py` only worked on the one machine where someone had assembled
+# it by hand. A release that builds on exactly one laptop is not reproducible.
+#
+# PINNED, not ranged, unlike requirements.txt. Those carry `>=` so the weekly
+# CI run keeps re-resolving and catches upstream drift, which is what you want
+# for a suite that must notice the world changing underneath it. A release
+# toolchain wants the opposite: the same inputs producing the same artifact.
+#
+# Create the environment with: ./infra/rc/release-env.sh
+#
+# TWO MORE TOOLS ARE NOT HERE because they are not Python and pip cannot
+# install them: `syft` (image SBOMs) and `cosign` (signing). release-env.sh
+# checks for both and names how to get them; it does not install them, because
+# silently installing signing tooling is not a thing a build script should do.
+build==1.5.0
+cyclonedx-bom==7.3.1

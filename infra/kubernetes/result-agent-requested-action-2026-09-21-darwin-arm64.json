@@ -1,0 +1,475 @@
+{
+  "action_rows": [
+    {
+      "approved_at": null,
+      "approved_by": null,
+      "approved_by_asserted_by": null,
+      "decided_at": "2026-09-21T17:58:33+00:00",
+      "decision": "allowed",
+      "decision_reason": "write_authorized",
+      "finished_at": "2026-09-21T17:58:34+00:00",
+      "id": "cbee4f8ea22a",
+      "requested_at": "2026-09-21T17:58:33+00:00",
+      "result": "succeeded",
+      "result_detail": "revision 2 -> 3; rollback_applied: intended template observed; application health not assessed",
+      "run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+      "target": "andyur-action-8fb56c962ce9fe0f/checkout-service",
+      "tool": "rollback_deployment"
+    }
+  ],
+  "attempts": 1,
+  "attempts_allowed": 2,
+  "checks": {
+    "agent_initiated_over_mcp": true,
+    "cluster_moved": true,
+    "decision_allowed": true,
+    "decision_is_a_span": true,
+    "every_row_targets_the_pin": true,
+    "reason_write_authorized": true,
+    "result_succeeded": true,
+    "row_recorded": true,
+    "run_completed": true,
+    "trace_expected_present": true
+  },
+  "claim": "a stock workload, through the generic MCP tool path, initiated a consequential action that the platform decided and performed",
+  "elapsed_seconds": 109,
+  "error": null,
+  "finished_at_epoch": 1790013538,
+  "gate": "agent-requested-action",
+  "host": "macOS-14.8.3-arm64-arm-64bit",
+  "not_covered": "the approval-gated outcome and the denial outcome against a real cluster; those are the `action` lane, which drives the decision module directly with hand-minted grants.",
+  "ok": true,
+  "pod_template_revision": {
+    "after": "one",
+    "before": "two"
+  },
+  "run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+  "source_sha256": {
+    "andyur/actions.py": "f18f1db55ea511a3f54c0559d785ec84743df531032c14f29bcc22080885b2b7",
+    "andyur/rollback.py": "ccb50055ce47793ea5ccee2e7803d965947643ba39f952a6e2d959ad66150afe",
+    "andyur/runner/driver.py": "7f55cab4c650c8a8c3e3fac889a37525ad4f792e12f8c9a90cbb617ee0615447",
+    "andyur/runner/toolservice.py": "b439ba37a9c4833d1663aee49e4889e27f2cf276094b54395b18c7cadfced4ec",
+    "andyur/server/actionrequests.py": "b0d022816c77072a9511779f7818f77a7408e5cf74f81ea63117d14da44de283",
+    "andyur/server/kubernetes_deployments.py": "39ba20989c4aae1000d79b8ff0fa70267bb46c150eab878eef2eafdcacabe7ee",
+    "demos/goose/agent.json": "3ba01593c0930084aabec94b437fb54fd44e04fb817bf9fd74c0d075991d2160",
+    "demos/goose/rollback-input.json": "be3d2bb6832ca6f0e1df1a87f4630026ee6f713f0a5e300264099d47bc229639",
+    "infra/kubernetes/action_gate_resources.py": "1becd83a699172082ade4a912c69a47df4148e9f8d4c8fbf842600cb6bee6997",
+    "infra/kubernetes/control-plane.yaml": "34eed644ee537b6342fa8d8b76df5ef78d2b02a62a206bd9a9c104a8f8b82998",
+    "infra/kubernetes/lib/gate.sh": "d0322c19197ca5d1effa5cb4f5aeccdd372a74c3aa13c84c60f4a89a4952fb14",
+    "infra/kubernetes/rbac-consequential-action.yaml": "543e46d233376df664a2170c7e832d754b87adc30558e17ee428fcfa14615933",
+    "infra/kubernetes/verify-agent-requested-action.sh": "c12690cf981a1a2cbb0bc7effbe5df0852dca59f8cda93b48c67aa0f511f7ed8",
+    "infra/observability/trace_readback.py": "dd0a988097216c4a3fdf280aa73bbf0ed4d55439f49fb98b0d656251943b720a"
+  },
+  "started_at_epoch": 1790013429,
+  "state": "done",
+  "summary_excerpt": "\n    __( O)>  \u25cf new session \u00b7 openai qwen3-andyur:latest\n   \\____)    20260921_1 \u00b7 /home/goose\n     L L     goose is ready\n{\n  \"messages\": [\n    {\n      \"id\": null,\n      \"role\": \"user\",\n      \"created\": 1790013440,\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"{\\\"incident\\\":{\\\"recent_change\\\":\\\"a new revision of the deployment was rolled out minutes before the errors b",
+  "target": "andyur-action-8fb56c962ce9fe0f/checkout-service",
+  "tool_calls_observed": [
+    "mcp.tool request_rollback"
+  ],
+  "trace": {
+    "dangling_parent_spans": [],
+    "expected": [
+      "run goose-agent",
+      "server.start_run",
+      "runner.serve",
+      "execfront POST",
+      "action.decide",
+      "mcp.tool request_rollback"
+    ],
+    "expected_missing": [],
+    "expected_present": true,
+    "root_spans": [
+      "server.request POST"
+    ],
+    "services": [
+      "andyur-execution-worker",
+      "andyur-runner",
+      "andyur-server"
+    ],
+    "span_count": 33,
+    "span_names": [
+      "CompleteWorkflow:AndyurExecution",
+      "RunActivity:execute_run",
+      "RunWorkflow:AndyurExecution",
+      "StartActivity:execute_run",
+      "StartWorkflow:AndyurExecution",
+      "action.decide",
+      "action.perform",
+      "controller.attach",
+      "controller.delete",
+      "controller.wait_ready",
+      "daemon.cleanup",
+      "daemon.exec_completion",
+      "daemon.launch",
+      "execfront POST",
+      "mcp GET",
+      "mcp POST",
+      "mcp.tool request_rollback",
+      "run goose-agent",
+      "runner goose-agent",
+      "runner.execute",
+      "runner.prepare",
+      "runner.prompt",
+      "runner.serve",
+      "server.execute_run_claim",
+      "server.request POST",
+      "server.start_run",
+      "server.worker_finish_run"
+    ],
+    "spans": [
+      {
+        "attributes": {
+          "andyur.agent": "goose-agent",
+          "andyur.pin": "deployment=checkout-service namespace=andyur-action-8fb56c962ce9fe0f",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.run_type": "work",
+          "andyur.scope": "files:read deployments:rollback",
+          "andyur.user": "33333333-3333-3333-3333-333333333333"
+        },
+        "name": "run goose-agent",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.external": true,
+          "http.request.method": "POST",
+          "http.response.status_code": 201
+        },
+        "name": "server.request POST",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.outcome": "launch",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915"
+        },
+        "name": "server.execute_run_claim",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {},
+        "name": "StartWorkflow:AndyurExecution",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {},
+        "name": "RunWorkflow:AndyurExecution",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {},
+        "name": "StartActivity:execute_run",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {},
+        "name": "runner.prepare",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {},
+        "name": "runner.prompt",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {},
+        "name": "server.start_run",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.operation": "wait_ready",
+          "andyur.outcome": "ready",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.seconds": 4.329,
+          "andyur.timeout_seconds": 60
+        },
+        "name": "controller.wait_ready",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.input_bytes": 1036,
+          "andyur.input_mode": "stdin",
+          "andyur.operation": "attach",
+          "andyur.outcome": "delivered",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.seconds": 4.546
+        },
+        "name": "controller.attach",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "goose-agent",
+          "andyur.orchestrator": "kubernetes",
+          "andyur.outcome": "success",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.runner_pid": 0,
+          "andyur.sandbox": true,
+          "andyur.worker_id": "execution-andyur-temporal-execution-worker-7fdd646589-wmqgl-1"
+        },
+        "name": "daemon.launch",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.decision": "admitted",
+          "andyur.external": true,
+          "andyur.refusal": "none",
+          "http.request.method": "POST",
+          "http.response.status_code": 200
+        },
+        "name": "mcp POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.decision": "admitted",
+          "andyur.external": true,
+          "andyur.refusal": "none",
+          "http.request.method": "POST",
+          "http.response.status_code": 202
+        },
+        "name": "mcp POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.decision": "admitted",
+          "andyur.external": true,
+          "andyur.refusal": "none",
+          "http.request.method": "POST",
+          "http.response.status_code": 200
+        },
+        "name": "mcp POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "goose-agent",
+          "andyur.decision": "refused",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.model.requested": "gpt-4o-mini",
+          "andyur.refusal": "model_not_granted",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "http.request.method": "POST",
+          "http.response.status_code": 403
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "goose-agent",
+          "andyur.decision": "forwarded",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.refusal": "none",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "gen_ai.request.model": "qwen3-andyur:latest",
+          "http.request.method": "POST",
+          "http.response.status_code": 200,
+          "http.upstream.status_code": 200
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "goose-agent",
+          "andyur.decision": "forwarded",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.refusal": "none",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "gen_ai.request.model": "qwen3-andyur:latest",
+          "http.request.method": "POST",
+          "http.response.status_code": 200,
+          "http.upstream.status_code": 200
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.outcome": "success",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.tool.name": "request_rollback"
+        },
+        "name": "mcp.tool request_rollback",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.decision": "admitted",
+          "andyur.external": true,
+          "andyur.refusal": "none",
+          "http.request.method": "POST",
+          "http.response.status_code": 200
+        },
+        "name": "mcp POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.action_decision": "allowed",
+          "andyur.action_reason": "write_authorized",
+          "andyur.agent_id": "goose-agent",
+          "andyur.component": "action-requests",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915"
+        },
+        "name": "action.decide",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.action_id": "cbee4f8ea22a",
+          "andyur.action_result": "succeeded",
+          "andyur.agent_id": "goose-agent",
+          "andyur.component": "action-requests",
+          "andyur.observed_revision": "3",
+          "andyur.operation": "rollback",
+          "andyur.rollback_reason": "rollback_applied",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915"
+        },
+        "name": "action.perform",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "goose-agent",
+          "andyur.decision": "forwarded",
+          "andyur.execfront.path_bytes": 24,
+          "andyur.execfront.path_segments": 4,
+          "andyur.execfront.route": "/v1/chat/completions",
+          "andyur.external": true,
+          "andyur.model.granted": "qwen3-andyur:latest",
+          "andyur.refusal": "none",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "gen_ai.request.model": "qwen3-andyur:latest",
+          "http.request.method": "POST",
+          "http.response.status_code": 200,
+          "http.upstream.status_code": 200
+        },
+        "name": "execfront POST",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.decision": "admitted",
+          "andyur.external": true,
+          "andyur.refusal": "none",
+          "http.request.method": "GET",
+          "http.response.status_code": 200
+        },
+        "name": "mcp GET",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.serve.exit": "sigterm",
+          "andyur.serve.ttl_seconds": 1800
+        },
+        "name": "runner.serve",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.llm_mode": "ollama",
+          "andyur.model": "qwen3-andyur:latest"
+        },
+        "name": "runner.execute",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.agent": "goose-agent",
+          "andyur.agent_spiffe_id": "spiffe://andyur.local/agent/goose-agent",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.split": true,
+          "andyur.workflow_id": "wf-a6a5244e82af"
+        },
+        "name": "runner goose-agent",
+        "service": "andyur-runner"
+      },
+      {
+        "attributes": {
+          "andyur.result": "done"
+        },
+        "name": "server.worker_finish_run",
+        "service": "andyur-server"
+      },
+      {
+        "attributes": {
+          "andyur.capture_bound_bytes": 1048576,
+          "andyur.captured_bytes": 81647,
+          "andyur.exit_code": 0,
+          "andyur.finish": "confirmed",
+          "andyur.finish.seconds": 0.013,
+          "andyur.result": "done",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.worker_id": "execution-andyur-temporal-execution-worker-7fdd646589-wmqgl-1"
+        },
+        "name": "daemon.exec_completion",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.generation": "exec-1f01d735038b04df",
+          "andyur.operation": "delete",
+          "andyur.outcome": "deleted",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.seconds": 1.574,
+          "andyur.timeout_seconds": 30
+        },
+        "name": "controller.delete",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {
+          "andyur.outcome": "success",
+          "andyur.run_id": "d541ed00d7fb46a6aa6fea3c7699d915",
+          "andyur.worker_id": "execution-andyur-temporal-execution-worker-7fdd646589-wmqgl-1"
+        },
+        "name": "daemon.cleanup",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {},
+        "name": "RunActivity:execute_run",
+        "service": "andyur-execution-worker"
+      },
+      {
+        "attributes": {},
+        "name": "CompleteWorkflow:AndyurExecution",
+        "service": "andyur-execution-worker"
+      }
+    ],
+    "trace_id": "5627da608eeec80e27bba624d3fe3d47",
+    "waited_seconds": 4.1
+  },
+  "why_the_gate_could_not_have_asked": "POST /runs/{id}/actions refuses an operator with 403; this gate holds only an operator credential, so the row it reads back can only have been created by the run.",
+  "workload": {
+    "adapter_added": false,
+    "image": "ghcr.io/block/goose (pinned digest, demos/goose/agent.json)",
+    "modified": false,
+    "name": "Goose"
+  },
+  "workload_substitution": {
+    "review_named": "OpenSRE",
+    "used": "Goose",
+    "why": "unmodified OpenSRE has a fixed IntegrationSpec registry and only GitHub/X-specific MCP clients; it cannot be handed an arbitrary platform tool without upstream support or the workload-specific adapter this work forbids. Goose takes a generic streamable-http MCP server through exec/v1 configuration.files, unchanged."
+  }
+}

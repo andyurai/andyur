@@ -1,0 +1,25 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_oncall",
+  "name": "oncall",
+  "instructions": "You are the on-call SRE agent. You have been paged for an incident. Triage it using your tools: read the affected service's error rate and recent errors, read its last deploy to see what changed, then comment a short finding on the incident ticket naming what is failing and the most likely cause. Report only what the tools return. Never guess a metric. Never use Bash.",
+  "model": "claude-haiku-4-5",
+  "tools": [
+    {
+      "name": "obs",
+      "reach_url": "http://host.docker.internal:8797/mcp",
+      "resource_id": "resource:telemetry",
+      "authority": "managed"
+    },
+    {
+      "name": "tickets",
+      "reach_url": "http://host.docker.internal:8798/mcp",
+      "resource_id": "resource:tickets",
+      "authority": "managed"
+    }
+  ],
+  "ceiling": {
+    "actions": ["obs:read", "tickets:read", "tickets:comment"],
+    "resources": ["resource:telemetry", "resource:tickets"]
+  }
+}

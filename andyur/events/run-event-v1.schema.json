@@ -1,0 +1,1950 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://andyur.ai/schemas/run-event-v1.schema.json",
+  "title": "Andyur RunEvent v1",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "payloadValue16": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        }
+      ]
+    },
+    "payloadValue15": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue16"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue16"
+          }
+        }
+      ]
+    },
+    "payloadValue14": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue15"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue15"
+          }
+        }
+      ]
+    },
+    "payloadValue13": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue14"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue14"
+          }
+        }
+      ]
+    },
+    "payloadValue12": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue13"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue13"
+          }
+        }
+      ]
+    },
+    "payloadValue11": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue12"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue12"
+          }
+        }
+      ]
+    },
+    "payloadValue10": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue11"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue11"
+          }
+        }
+      ]
+    },
+    "payloadValue9": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue10"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue10"
+          }
+        }
+      ]
+    },
+    "payloadValue8": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue9"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue9"
+          }
+        }
+      ]
+    },
+    "payloadValue7": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue8"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue8"
+          }
+        }
+      ]
+    },
+    "payloadValue6": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue7"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue7"
+          }
+        }
+      ]
+    },
+    "payloadValue5": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue6"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue6"
+          }
+        }
+      ]
+    },
+    "payloadValue4": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue5"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue5"
+          }
+        }
+      ]
+    },
+    "payloadValue3": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue4"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue4"
+          }
+        }
+      ]
+    },
+    "payloadValue2": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue3"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue3"
+          }
+        }
+      ]
+    },
+    "payloadValue1": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        {
+          "type": "integer",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "number",
+          "minimum": -9223372036854775807,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "maxLength": 65536
+        },
+        {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/$defs/payloadValue2"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {
+            "maxLength": 512,
+            "pattern": "^[ -~]+$",
+            "not": {
+              "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/payloadValue2"
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "agent_id",
+    "authority_revision",
+    "category",
+    "classification",
+    "durability",
+    "event_id",
+    "occurred_at",
+    "parent_event_id",
+    "payload",
+    "recorded_at",
+    "registry_digest",
+    "run_id",
+    "schema_version",
+    "sequence",
+    "source",
+    "span_id",
+    "summary",
+    "tenant_id",
+    "trace_id",
+    "trust_class",
+    "type",
+    "visibility",
+    "workflow_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "workflow_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9223372036854775807
+    },
+    "occurred_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|\\+00:00)$"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|\\+00:00)$"
+    },
+    "category": {
+      "enum": [
+        "run",
+        "agent",
+        "model",
+        "operation",
+        "policy",
+        "authority",
+        "credential",
+        "delegation",
+        "runtime",
+        "audit"
+      ]
+    },
+    "type": {
+      "enum": [
+        "run.created",
+        "run.starting",
+        "run.started",
+        "run.completed",
+        "run.failed",
+        "run.cancelled",
+        "run.timeout",
+        "agent.started",
+        "agent.output",
+        "agent.progress",
+        "agent.warning",
+        "agent.error",
+        "model.requested",
+        "model.started",
+        "model.delta",
+        "model.completed",
+        "model.failed",
+        "operation.requested",
+        "operation.started",
+        "operation.completed",
+        "operation.failed",
+        "policy.allowed",
+        "policy.denied",
+        "authority.resolved",
+        "authority.narrowed",
+        "authority.denied",
+        "credential.requested",
+        "credential.issued",
+        "credential.revoked",
+        "delegation.requested",
+        "delegation.granted",
+        "delegation.denied",
+        "runtime.scheduled",
+        "runtime.launched",
+        "runtime.degraded",
+        "runtime.terminated",
+        "audit.checkpoint",
+        "audit.evidence.persisted"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "trust_class": {
+      "enum": [
+        "asserted",
+        "observed",
+        "authoritative"
+      ]
+    },
+    "durability": {
+      "enum": [
+        "ephemeral",
+        "durable"
+      ]
+    },
+    "classification": {
+      "enum": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted"
+      ]
+    },
+    "visibility": {
+      "enum": [
+        "user",
+        "developer",
+        "operator",
+        "security"
+      ]
+    },
+    "summary": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 4096
+    },
+    "payload": {
+      "type": "object",
+      "maxProperties": 256,
+      "propertyNames": {
+        "maxLength": 512,
+        "pattern": "^[ -~]+$",
+        "not": {
+          "pattern": "^(?:[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[pP][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[aA][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[zZ][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[nN][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[tT][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[cC][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[dD][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[lL][^A-Za-z0-9]*[uU][^A-Za-z0-9]*[eE][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[pP][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[yY][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[aA][^A-Za-z0-9]*[wW][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[vV][^A-Za-z0-9]*[iI][^A-Za-z0-9]*[dD][^A-Za-z0-9]*|[^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[fF][^A-Za-z0-9]*[rR][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[sS][^A-Za-z0-9]*[hH][^A-Za-z0-9]*[tT][^A-Za-z0-9]*[oO][^A-Za-z0-9]*[kK][^A-Za-z0-9]*[eE][^A-Za-z0-9]*[nN][^A-Za-z0-9]*)$"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/payloadValue1"
+      }
+    },
+    "trace_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "span_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "parent_event_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "registry_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    },
+    "authority_revision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": ".*\\S.*"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "run.created"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "run"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "run.starting"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "run"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "run.started"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "run"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "run.completed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "run"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "run.failed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "run"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "run.cancelled"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "run"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "run.timeout"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "run"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.started"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "agent"
+          },
+          "trust_class": {
+            "enum": [
+              "asserted",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable",
+              "ephemeral"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.output"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "agent"
+          },
+          "trust_class": {
+            "enum": [
+              "asserted",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable",
+              "ephemeral"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.progress"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "agent"
+          },
+          "trust_class": {
+            "enum": [
+              "asserted",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable",
+              "ephemeral"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.warning"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "agent"
+          },
+          "trust_class": {
+            "enum": [
+              "asserted",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable",
+              "ephemeral"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.error"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "agent"
+          },
+          "trust_class": {
+            "enum": [
+              "asserted",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable",
+              "ephemeral"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "model.requested"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "model"
+          },
+          "trust_class": {
+            "enum": [
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "model.started"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "model"
+          },
+          "trust_class": {
+            "enum": [
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "model.completed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "model"
+          },
+          "trust_class": {
+            "enum": [
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "model.failed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "model"
+          },
+          "trust_class": {
+            "enum": [
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "model.delta"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "model"
+          },
+          "trust_class": {
+            "enum": [
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "ephemeral"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "operation.requested"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "operation"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "operation.started"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "operation"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "operation.completed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "operation"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "operation.failed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "operation"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative",
+              "observed"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "policy.allowed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "policy"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "policy.denied"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "policy"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "authority.resolved"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "authority"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "authority.narrowed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "authority"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "authority.denied"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "authority"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "credential.requested"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "credential"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "credential.issued"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "credential"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "credential.revoked"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "credential"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "delegation.requested"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "delegation"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "delegation.granted"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "delegation"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "delegation.denied"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "delegation"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "runtime.scheduled"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "runtime"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "runtime.launched"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "runtime"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "runtime.degraded"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "runtime"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "runtime.terminated"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "runtime"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "audit.checkpoint"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "audit"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "audit.evidence.persisted"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "const": "audit"
+          },
+          "trust_class": {
+            "enum": [
+              "authoritative"
+            ]
+          },
+          "durability": {
+            "enum": [
+              "durable"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

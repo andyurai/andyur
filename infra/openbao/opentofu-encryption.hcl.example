@@ -1,0 +1,17 @@
+key_provider "openbao" "andyur" {
+  key_name                 = "tofu-state"
+  transit_engine_path      = "/transit"
+  key_length               = 32
+  encrypted_metadata_alias = "andyur-openbao-state-v1"
+}
+method "aes_gcm" "andyur" {
+  keys = key_provider.openbao.andyur
+}
+state {
+  method   = method.aes_gcm.andyur
+  enforced = true
+}
+plan {
+  method   = method.aes_gcm.andyur
+  enforced = true
+}

@@ -1,0 +1,72 @@
+{
+  "cleanup": {
+    "complete": true,
+    "server_thread_alive": false
+  },
+  "evidence_inputs": {
+    "exclusion_gate_sha256": "a5332e327f650fdf9cc6b48d72e6b97feb6b2291ae79ca9582e0ee48db8f6fc9",
+    "gate_sha256": "1533cb8a11f63209358a26295c7238692f587dc0688814495e39fb98c880f1a6",
+    "oauth_lock_sha256": "7b3515be1c41303f3f87aaa0900f4594510f83866191329e996cae5b10ca4a91",
+    "phase1_lock_sha256": "bcce3667c9afced1f0cfd5893365b4bd6682cbb22451811f4b3eb335abf92d48",
+    "verify_script_sha256": "715599a112990bda2677383e8766e5dae4cbe31137edff5c8c664196a26d49cb"
+  },
+  "known_custody_gap": {
+    "private_jwk_serializable_via_token_as_dict": true
+  },
+  "libraries": {
+    "PyJWT": "2.13.0",
+    "requests-oauth2client": "1.8.0"
+  },
+  "nonce_confinement": {
+    "default_as_mutation_attempts": 3,
+    "default_rs_mutation_attempts": 2,
+    "fd_growth": 1,
+    "guarded_as_attempts": 1,
+    "guarded_rs_attempts": 1,
+    "guarded_state_absent": true,
+    "stress_as_challenges": 32,
+    "stress_rs_challenges": 32
+  },
+  "platform": "macOS-14.8.3-arm64-arm-64bit",
+  "proof": {
+    "alg": "ES256",
+    "has_ath": false,
+    "has_iat": true,
+    "has_nonce": false,
+    "htm": "POST",
+    "htu_path": "/token",
+    "jkt_sha256": "cc7395348a1dc27deb3f9d70056b22c689db4c772fabff57ba8af5ed0fffa7b1",
+    "observed_distinct_jti": 32,
+    "public_jwk_only": true,
+    "typ": "dpop+jwt"
+  },
+  "python": "3.12.3",
+  "schema": "andyur.sender-binding.phase1/v1",
+  "status": "pass",
+  "token": {
+    "negative_mutations": {
+      "cnf_extra_member": "ValueError",
+      "cnf_missing_jkt": "ValueError",
+      "cnf_non_string_jkt": "ValueError",
+      "cnf_string": "ValueError",
+      "cnf_wrong_jkt": "ValueError",
+      "disallowed_alg": "InvalidAlgorithmError",
+      "expired": "ExpiredSignatureError",
+      "future_iat": "ImmatureSignatureError",
+      "missing_aud": "MissingRequiredClaimError",
+      "missing_cnf": "MissingRequiredClaimError",
+      "missing_exp": "MissingRequiredClaimError",
+      "missing_iat": "MissingRequiredClaimError",
+      "missing_iss": "MissingRequiredClaimError",
+      "missing_sub": "MissingRequiredClaimError",
+      "token_type_ambiguous": "ValueError",
+      "token_type_bearer": "ValueError",
+      "token_type_missing": "ValueError",
+      "wrong_audience": "InvalidAudienceError",
+      "wrong_issuer": "InvalidIssuerError",
+      "wrong_signature": "InvalidSignatureError"
+    },
+    "token_type": "DPoP",
+    "verified_cnf_matches": true
+  }
+}

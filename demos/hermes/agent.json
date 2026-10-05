@@ -1,0 +1,69 @@
+{
+  "apiVersion": "andyur.ai/v1",
+  "kind": "Agent",
+  "metadata": {
+    "id": "agt_hermes",
+    "name": "hermes-agent",
+    "version": "0.1.0"
+  },
+  "instructions": "Complete the task delivered on stdin inside the governed sandbox and report the result.",
+  "model": {
+    "requested": "gemma4-andyur:latest",
+    "access": "proxy"
+  },
+  "runtime": {
+    "type": "container",
+    "image": {
+      "ref": "docker.io/nousresearch/hermes-agent",
+      "digest": "sha256:9469b3e78b9545b6d576eb8887a95352e9a0ea83730eaf31431cf862ca1010e1"
+    },
+    "command": [
+      "/opt/hermes/.venv/bin/hermes",
+      "chat",
+      "--query-file",
+      "-",
+      "--toolsets",
+      "andyur",
+      "--max-turns",
+      "8",
+      "--ignore-rules"
+    ],
+    "interface": {
+      "protocol": "exec/v1"
+    },
+    "lifecycle": {
+      "mode": "task",
+      "max_seconds": 1800
+    },
+    "process": {
+      "input": {
+        "mode": "stdin",
+        "max_bytes": 262144
+      },
+      "output": {
+        "stdout": "capture",
+        "stderr": "capture",
+        "max_bytes": 1048576
+      }
+    },
+    "configuration": {
+      "env": {
+        "HOME": {
+          "from": "workspace.home"
+        },
+        "HERMES_HOME": {
+          "from": "workspace.home"
+        },
+        "HERMES_WRITE_SAFE_ROOT": {
+          "from": "workspace.home"
+        }
+      },
+      "files": [
+        {
+          "path": "${workspace.home}/config.yaml",
+          "template": "# Rendered by the platform before hermes starts (exec/v1 configuration.files).\n# HERMES_HOME is the run's scratch home, because the image's /opt/data is on a\n# read-only root filesystem. The model is the run's front, pinned to the granted\n# model; the ONLY tool server is the run's own MCP tool service.\nmodel:\n  default: \"${services.model.name}\"\n  provider: custom\n  base_url: \"${services.model.openai_base_url}\"\n  # Not a credential: the front drops Authorization before the model leg.\n  api_key: andyur-front\n  # The granted model is served with a 65536-token window. Stating it here\n  # stops hermes probing the endpoint for it, which the front would refuse.\n  context_length: 65536\n  ollama_num_ctx: 65536\nmcp_servers:\n  andyur:\n    url: \"${services.tools.mcp_url}\"\n    headers:\n      Authorization: \"${services.tools.mcp_headers.Authorization}\"\n    timeout: 120\nmemory:\n  memory_enabled: false\n  user_profile_enabled: false\nupdates:\n  check: false\ntelemetry:\n  shared_metrics:\n    enabled: false\n    send: false\n"
+        }
+      ]
+    }
+  }
+}

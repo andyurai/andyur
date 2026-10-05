@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "andyur"
+version = "0.1.0"
+description = "A minimal, self-hostable platform for running AI agents you do not fully trust."
+readme = "README.md"
+# The console's self-hosted fonts ship in the wheel under the Open Font License,
+# so the expression names both; LICENSE-OFL.txt travels with them.
+license = "Apache-2.0 AND OFL-1.1"
+requires-python = ">=3.12"
+# Dependencies are declared once, in requirements.txt, which run.sh and the
+# Dockerfiles also install from. This block reads that same file so the two
+# install paths can never disagree.
+dynamic = ["dependencies", "optional-dependencies"]
+
+keywords = ["ai-agents", "agent-security", "zero-trust", "spiffe", "mcp", "oauth"]
+# No licence classifier: `license` above is the SPDX expression, and the two
+# may not be given together.
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: System :: Distributed Computing",
+]
+
+[project.urls]
+Homepage = "https://andyur.ai"
+Repository = "https://github.com/andyurai/andyur"
+Issues = "https://github.com/andyurai/andyur/issues"
+Changelog = "https://github.com/andyurai/andyur/blob/main/CHANGELOG.md"
+
+[project.scripts]
+andyur = "andyur.cli:main"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+optional-dependencies.dev = { file = ["requirements-dev.txt"] }
+optional-dependencies.temporal = { file = ["requirements-temporal.txt"] }
+
+[tool.setuptools.packages.find]
+include = ["andyur*"]
+
+[tool.setuptools.package-data]
+"andyur.server" = ["as-certification-matrix.json"]
+# The published AgentManifest v1 schema. Declared explicitly (not left to
+# setuptools' implicit git file-finder) so it ships in the wheel on the
+# git-archive publish path, where there is no .git for the finder to use.
+"andyur.agentspec" = ["agent-manifest-v1.schema.json"]
+"andyur.events" = ["run-event-v1.schema.json"]
+# The console page and its self-hosted fonts: an installed wheel serves them
+# from the package, so they must ship with it. The OFL requires the licence to
+# travel with the font files, so LICENSE-OFL.txt is packaged alongside them.
+"andyur.console" = ["static/*.html", "static/*.js", "static/*.css",
+                    "static/fonts/*.woff2", "static/fonts/LICENSE-OFL.txt"]

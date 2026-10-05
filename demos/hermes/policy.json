@@ -1,0 +1,9 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_platform_policy",
+  "name": "platform-policy",
+  "instructions": "Platform-owned publisher policy input for the stock-workload demos: no tools, no authority.",
+  "model": null,
+  "tools": [],
+  "ceiling": {"actions": [], "resources": []}
+}

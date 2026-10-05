@@ -1,0 +1,57 @@
+services:
+  openbao-permissions:
+    image: openbao/openbao@sha256:5b2486ab0fb90bbc788cc345b0a08616dfb375873ee8be5df3a2fd4d378a67e0
+    entrypoint: ["/bin/sh", "-ec"]
+    command: ["chown 100:1000 /openbao/data && chmod 0700 /openbao/data"]
+    user: "0:0"
+    read_only: true
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN", "FOWNER"]
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - openbao-data:/openbao/data
+    network_mode: none
+
+  openbao:
+    image: openbao/openbao@sha256:5b2486ab0fb90bbc788cc345b0a08616dfb375873ee8be5df3a2fd4d378a67e0
+    container_name: andyur-openbao
+    command: ["server", "-config=/etc/openbao/andyur.hcl"]
+    user: "100:1000"
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      BAO_ADDR: https://127.0.0.1:8200
+      BAO_CACERT: /openbao/tls/ca.crt
+    volumes:
+      - openbao-data:/openbao/data
+      - ./openbao.hcl:/etc/openbao/andyur.hcl:ro
+      - ./configure.sh:/openbao/bootstrap/configure.sh:ro
+      - ./policies:/openbao/bootstrap/policies:ro
+      - ${ANDYUR_OPENBAO_TLS_DIR:?set by openbao-stack.sh}:/openbao/tls:ro
+    tmpfs:
+      - /tmp:mode=1777
+    ports:
+      - "127.0.0.1:${ANDYUR_OPENBAO_PORT:-8200}:8200"
+    healthcheck:
+      test: ["CMD", "bao", "status"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 2s
+    networks: [openbao]
+    depends_on:
+      openbao-permissions:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  openbao-data:
+    name: andyur-openbao-data
+
+networks:
+  openbao:
+    name: andyur-openbao
+    internal: true

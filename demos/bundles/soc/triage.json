@@ -1,0 +1,72 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_soc_triage",
+  "name": "soc-triage",
+  "instructions": "You decide whether a detection is a real threat or noise.\n\nStart from the alert named in your task: read it in full from the case system. Then build context around it -- what the current alert picture looks like, what the rule that fired actually asserts, and what the host itself was doing: which processes were running, which ports were open, whether its agent is even reporting.\n\nAnswer in one line: TRUE POSITIVE, FALSE POSITIVE, or NEEDS A HUMAN, followed by the single piece of evidence that decided it. Prefer NEEDS A HUMAN when the evidence is thin. A wrong suppression is the worst thing you can produce and nobody will ever see it; an unnecessary escalation costs an analyst two minutes and they will tell you.\n\nYou cannot change, close, suppress or comment on anything, and you must not write as though you had. Your output is a judgement somebody else acts on. Report only what the tools return. Never use Bash.",
+  "model": null,
+  "tools": [
+    {
+      "name": "cases",
+      "reach_url": "http://host.docker.internal:8812/mcp",
+      "resource_id": "resource:cases",
+      "authority": "managed",
+      "mcp_tools": [
+        {
+          "name": "get_thehive_alert_by_id",
+          "requires": "cases:read"
+        },
+        {
+          "name": "get_thehive_alerts",
+          "requires": "cases:read"
+        }
+      ]
+    },
+    {
+      "name": "wazuh",
+      "reach_url": "http://host.docker.internal:8811/mcp",
+      "resource_id": "resource:alerts",
+      "authority": "managed",
+      "mcp_tools": [
+        {
+          "name": "get_wazuh_alert_summary",
+          "requires": "alerts:read"
+        },
+        {
+          "name": "get_wazuh_rules_summary",
+          "requires": "alerts:read"
+        },
+        {
+          "name": "get_wazuh_agent_processes",
+          "requires": "alerts:read"
+        },
+        {
+          "name": "get_wazuh_agent_ports",
+          "requires": "alerts:read"
+        },
+        {
+          "name": "get_wazuh_agents",
+          "requires": "alerts:read"
+        }
+      ]
+    }
+  ],
+  "ceiling": {
+    "actions": [
+      "cases:read",
+      "alerts:read"
+    ],
+    "resources": [
+      "resource:cases",
+      "resource:alerts"
+    ]
+  },
+  "card": {
+    "summary": "Decides whether a detection is a true positive, and names the one piece of evidence that decided it.",
+    "category": "threat detection and response",
+    "requires": [
+      "gbrigandi/mcp-server-thehive (MIT) on :8812 with TheHive behind it -- stdio only, so it needs sparfenyuk/mcp-proxy in front",
+      "gbrigandi/mcp-server-wazuh (MIT) on :8811 with a Wazuh behind it -- it speaks stdio unless built with `--features http`, so otherwise front it with sparfenyuk/mcp-proxy. Or serve the recorded fixture instead: python demos/bundles/soc/replay_wazuh.py --port 8811",
+      "a dev-profile control plane with ANDYUR_AGENT_AUTH=on and containerised runs -- the shape `./run.sh sre-demo` builds and the other registry agents already run under. reach_url is resolved from the RUNNER's namespace, which is why it names the host gateway, exactly as demos/agent-registry does"
+    ]
+  }
+}

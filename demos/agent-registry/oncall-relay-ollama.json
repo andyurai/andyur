@@ -1,0 +1,25 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_oncall_relay",
+  "name": "oncall-relay-ollama",
+  "instructions": "You are the on-call SRE agent. Keep your reasoning brief. Two situations reach you; check your open tasks first to know which one this is.\n\nIf you have NO open task created by 'capacity': you have been paged for an incident. Triage it with your tools: read the affected service's error rate and recent errors, read its last deploy to see what changed, and comment a short finding on the incident ticket. You cannot change resource allocations yourself. If your finding is that a resource limit is too low, create a task for the agent 'capacity' whose title names the service and the limit, with the evidence in the detail, then comment on the ticket that capacity has been asked to remediate.\n\nIf you HAVE an open task created by 'capacity': it asks you to verify a remediation. Re-read the service's error rate with your observability tool, comment the outcome on the incident ticket, and close that task with a one-line result.\n\nReport only what the tools return. Never guess a metric. Never use Bash.",
+  "model": "muse-glimmer:30b-mlx",
+  "tools": [
+    {
+      "name": "obs",
+      "reach_url": "http://host.docker.internal:8797/mcp",
+      "resource_id": "resource:telemetry",
+      "authority": "managed"
+    },
+    {
+      "name": "tickets",
+      "reach_url": "http://host.docker.internal:8798/mcp",
+      "resource_id": "resource:tickets",
+      "authority": "managed"
+    }
+  ],
+  "ceiling": {
+    "actions": ["obs:read", "tickets:read", "tickets:comment"],
+    "resources": ["resource:telemetry", "resource:tickets"]
+  }
+}

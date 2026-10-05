@@ -1,0 +1,219 @@
+# CI for the standalone repository. In the private monorepo this file is
+# dormant (GitHub only executes workflows from the repository root); it
+# becomes the active CI the day this tree is extracted to its own repo.
+# Keep it path-relative to THIS directory as root: no parent paths.
+#
+# WHY THIS IS MORE THAN A UNIT SUITE. The README advertises properties verified
+# by attack, and a public repository whose CI cannot run the verifiers is asking
+# to be taken on trust. So the lanes below grow toward what the private CI runs,
+# and each one exists because something it checks has broken before.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  fast-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # A TEST dependency, for tests/console_page_checks.mjs only: the console
+      # page is one hand-written script with no build step, and this is what
+      # runs it under a virtual clock. Declared rather than assumed, because a
+      # runner that happens to ship node today is not a contract.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install as a package (the artifact users get, not the checkout)
+        run: |
+          python -m venv .venv
+          ./.venv/bin/pip install ".[dev]"
+      # The README lists the Claude Code CLI as a prerequisite, and one test
+      # drives the real CLI's auth preflight against a fake model stream to
+      # prove the proxy marker gets past it without a credential. That test
+      # asserts the CLI is present rather than skipping, so a suite run without
+      # it is red -- which is what this workflow was on its first run in the
+      # public repository, because only the private one installed it. Pinned,
+      # so an upstream release cannot change what this job tests overnight.
+      - name: Claude Code CLI (a documented prerequisite)
+        run: npm install -g @anthropic-ai/claude-code@2.1.220
+      - name: Fast suite (no local infrastructure)
+        run: ./.venv/bin/python -m pytest tests/ -q -m "not integration"
+      - name: Console script gate
+        run: ./.venv/bin/andyur --help
+
+  install-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clean non-editable install from sdist path
+        run: |
+          python -m venv gate
+          ./gate/bin/pip install .
+          cd / && "$GITHUB_WORKSPACE/gate/bin/andyur" --help
+      # THE BUILT ARTIFACT, with nothing running, installed the three ways pip
+      # installs: a virtualenv, the user site, and a target directory. The
+      # tests hold the same contract against a package laid out by hand; this
+      # is the wheel pip actually produced, which is the only place a missing
+      # file would show. The first cut of the layout rule recognised the
+      # virtualenv alone, and this job passed.
+      - name: An installed copy explains itself with things the reader has
+        run: |
+          ./gate/bin/pip wheel --no-deps -w dist .
+          ./gate/bin/pip install --target "$RUNNER_TEMP/target" dist/andyur-*.whl
+          PYTHONUSERBASE="$RUNNER_TEMP/user" python -m pip install --user dist/andyur-*.whl
+          cd /
+          explains() {
+            if out=$("$@" status 2>&1); then
+              echo "andyur status succeeded with no deployment: $out"; exit 1
+            fi
+            echo "$out"
+            echo "$out" | grep -q "installed as a package"
+            if echo "$out" | grep -q -e 'run\.sh' -e 'Traceback' -e '-packages/'; then
+              echo "the message names something an installed reader does not have"; exit 1
+            fi
+          }
+          explains "$GITHUB_WORKSPACE/gate/bin/andyur"
+          PYTHONPATH="$RUNNER_TEMP/target" explains "$GITHUB_WORKSPACE/gate/bin/python" -m andyur.cli
+          PYTHONUSERBASE="$RUNNER_TEMP/user" explains "$RUNNER_TEMP/user/bin/andyur"
+
+  postgres:
+    # The coordination invariants are enforced by the DATABASE, not by the
+    # application: at most one live run per agent is a partial unique index, and
+    # the claim is an insert that loses the race. SQLite and Postgres do not
+    # agree about every corner of that, so the suite has to meet the one a
+    # deployment actually runs on.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: andyur
+          POSTGRES_USER: andyur
+          POSTGRES_DB: andyur
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U andyur"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m venv .venv
+          ./.venv/bin/pip install ".[dev]"
+      - name: Coordination suite against Postgres
+        env:
+          ANDYUR_DB_URL: postgresql://andyur:andyur@localhost:5432/andyur
+        run: |
+          ./.venv/bin/python -m pytest tests/ -q -m "not integration" \
+            -k "coordinat or claim or workflow or drain or schedul or orchestration"
+
+  temporal:
+    # The workflow provider, against a real service. Everything about it is
+    # assertable with the SDK absent EXCEPT whether it works -- and the first
+    # time it met a live service it turned out the worker could not start, the
+    # error translation matched nothing, and a symbol it imported did not
+    # exist. None of that was visible without this lane.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # THE DEV SERVER FROM THE PINNED admin-tools IMAGE, started as a step.
+      # This was a `services:` entry on temporalio/auto-setup with DB=sqlite,
+      # which that image refuses ("Unsupported driver specified"), so the
+      # service never came up; the job had never run to show it. A service
+      # cannot override an image's entrypoint, hence a step.
+      - name: a Temporal service
+        run: |
+          docker run -d --name temporal -p 7233:7233 --entrypoint temporal \
+            docker.io/temporalio/admin-tools@sha256:f048113e98748c6b902e1962e3225082f42a4760467aaeda139e67c4aa692231 \
+            server start-dev --ip 0.0.0.0 --headless
+          for i in $(seq 1 60); do
+            docker exec temporal temporal operator cluster health --address localhost:7233 \
+              >/dev/null 2>&1 && exit 0
+            sleep 2
+          done
+          docker logs temporal; exit 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install with the workflow-engine extra
+        run: |
+          python -m venv .venv
+          ./.venv/bin/pip install ".[dev]" ".[temporal]"
+      - name: Failure, replay, cancellation and idempotency campaign
+        env:
+          ANDYUR_TEMPORAL_ADDRESS: localhost:7233
+          ANDYUR_REQUIRE_TEMPORAL: "1"
+        run: ./.venv/bin/python -m pytest tests/test_temporal_campaign.py -q -m integration
+      # THE CONFORMANCE SUITE, AGAINST THE ONE DURABLE PROVIDER. It claimed to
+      # run "against every provider" and listed the native engine and a fake --
+      # never this one. Run here, against a real service, it failed on its
+      # first pass, and a Temporal halt that signalled nothing was invisible to
+      # it until then.
+      - name: Provider conformance, against the durable provider
+        env:
+          ANDYUR_TEMPORAL_ADDRESS: localhost:7233
+          ANDYUR_REQUIRE_TEMPORAL: "1"
+        run: ./.venv/bin/python -m pytest tests/orchestration_contract/test_provider_conformance.py -q -m integration
+      # THE ENGINE'S AUTHORIZER, run for real: the Envoy config shipped in
+      # temporal.yaml in front of a real Temporal, one certificate per
+      # identity. It is the only thing that authorizes callers by SPIFFE ID,
+      # and a static read of its config cannot say whether Envoy agrees.
+      - name: Engine authorizer, against a real Envoy and Temporal
+        env:
+          ANDYUR_REQUIRE_DOCKER: "1"
+        run: ./.venv/bin/python -m pytest tests/test_engine_authorizer.py -q -m integration
+      - name: Engine dispatch (Architecture B+), against a real Temporal
+        env:
+          ANDYUR_TEMPORAL_ADDRESS: localhost:7233
+          ANDYUR_REQUIRE_TEMPORAL: "1"
+        run: ./.venv/bin/python -m pytest tests/test_bplus_engine_dispatch.py -q -m integration
+
+  quickstart-stays-local:
+    # THE PRIMARY METRIC IS A STRANGER SUCCEEDING, and the ten-minute path is
+    # where that is decided. It must never require a workflow engine: the
+    # moment a quickstart kind needs durable execution, the floor of this
+    # project stops being "a laptop".
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # THE BASE INSTALL, not the dev extra. `.[dev]` carries the Temporal SDK
+      # so the provider can be tested, which means installing it here would put
+      # the engine in the very venv that exists to prove the engine is not
+      # needed -- a lane that cannot fail for the reason it was written.
+      - name: Install WITHOUT the workflow-engine extra
+        run: |
+          python -m venv .venv
+          ./.venv/bin/pip install .
+      - name: The ten-minute path needs no workflow engine
+        run: |
+          ./.venv/bin/python - <<'PY'
+          import importlib.util
+          assert importlib.util.find_spec("temporalio") is None, (
+              "the Temporal SDK is present in the venv that exists to prove it "
+              "is not required; this lane cannot detect the regression it is for")
+          from andyur.orchestration import capabilities
+          from andyur.orchestration.local import LocalWorkflowProvider
+          caps = LocalWorkflowProvider().capabilities()
+          for kind in ("single_agent", "scheduled_agent", "deferred_work"):
+              capabilities.check(kind, caps)
+          from andyur.orchestration import facade
+          assert facade().provider.name == "local"
+          print("the ten-minute path needs no workflow engine")
+          PY
+      - name: The console script still works without it
+        run: ./.venv/bin/andyur --help

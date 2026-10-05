@@ -1,0 +1,24 @@
+# Dev/test-only dependencies (not needed to run Andyur). Installed by
+# ./run.sh test. Runtime deps live in requirements.txt.
+pytest>=8.0
+# Enforces pytest.ini's per-test timeout: a hang must be a RED test, not a
+# stalled CI job. A mutation sweep found one that hung the suite indefinitely.
+pytest-timeout>=2.3
+# Executes the published RunEvent and AgentManifest JSON contracts in CI so
+# schema drift and negative trust-boundary cases fail before packaging.
+jsonschema>=4.23
+# Activates jsonschema's RFC 3339 date-time FormatChecker implementation;
+# without it, format=date-time is accepted as annotation-only in tests.
+rfc3339-validator>=0.1.4
+# Parses the AgentManifest YAML example embedded in
+# docs/agent-runtime-protocol-v1.md so the docs-truth test can prove the spec's
+# own example is valid. Dev-only: runtime manifest loading is JSON until the
+# packaging CLI declares YAML as a runtime dependency (ADR-008 C2).
+pyyaml>=6.0
+
+# The Temporal SDK, so the provider in andyur/orchestration/temporal can be
+# TESTED. Dev-only on purpose: it stays out of requirements.txt, where it would
+# become a runtime dependency for every installation including the ones that run
+# ANDYUR_WORKFLOW_PROVIDER=local and never import it. The `temporal` extra in
+# pyproject.toml is what a deployment actually using the provider installs.
+temporalio>=1.33,<2

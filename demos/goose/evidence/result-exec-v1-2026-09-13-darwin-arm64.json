@@ -1,0 +1,156 @@
+{
+  "gate": "exec-v1-conformance",
+  "adr": "adr-011",
+  "decision": "D8",
+  "started_utc": "2026-09-13T20:42:00Z",
+  "started_epoch": 1789332120.301363,
+  "duration_s": 19.0,
+  "host": {
+    "platform": "macOS-14.8.3-arm64-arm-64bit",
+    "python": "3.12.3",
+    "docker": "29.1.3"
+  },
+  "image": {
+    "ref": "ghcr.io/block/goose@sha256:d85a724ee487425f38ce015323adf2003591268ee515d9018ac89450ed7d3a5a",
+    "id": "sha256:2d959866ce495aa9150b9279cbd0010e542d3d1f0b0136b879b0c7fbc7629bcd"
+  },
+  "inputs": {
+    "selected_image": "ghcr.io/block/goose@sha256:d85a724ee487425f38ce015323adf2003591268ee515d9018ac89450ed7d3a5a",
+    "selected_command": [
+      "goose",
+      "run",
+      "-i",
+      "-",
+      "--no-session",
+      "--max-turns",
+      "8",
+      "--output-format",
+      "json"
+    ],
+    "manifest_sha256": "3ba01593c0930084aabec94b437fb54fd44e04fb817bf9fd74c0d075991d2160",
+    "exec_gate_sha256": "1227a9776a42c78816443b2ad57211db11a40f6f388cde5ecfedff9542e2bceb",
+    "interface": "exec/v1",
+    "granted_model": "qwen3-andyur:latest",
+    "input_mode": "stdin",
+    "input_sha256": "2ff0221f864dded5272f8f65ae8417e23043a90342f7a02791c53301531e36d9",
+    "generated_configuration": {
+      "env_names": [
+        "GOOSE_PROVIDER",
+        "GOOSE_MODE",
+        "GOOSE_DISABLE_KEYRING",
+        "OPENAI_API_KEY",
+        "GOOSE_MODEL",
+        "OPENAI_HOST",
+        "HOME"
+      ],
+      "secret_env_names": [],
+      "files": [
+        {
+          "path": "/home/agent/.config/goose/config.yaml",
+          "sha256": "be7eaeeadfbc8631acd6ee0bfbcbb3f3881740cb70caad1c9eedfb7fad56905e"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "trace_id": "428584dc307891560288ee6f7d77ee21",
+    "exported_to": "in-memory only",
+    "span_count": 9,
+    "span_names": [
+      "execfront GET",
+      "execfront POST"
+    ],
+    "front_refusals_by_name": [
+      "model_key_variant",
+      "model_not_granted",
+      "path_not_model_call"
+    ],
+    "front_forwarded": 4
+  },
+  "workload_stdout_excerpt": "\n    __( O)>  \u25cf new session \u00b7 openai qwen3-andyur:latest\n   \\____)    20260913_1 \u00b7 /home/goose\n     L L     goose is ready\n{\n  \"messages\": [\n    {\n      \"id\": null,\n      \"role\": \"user\",\n      \"created\": 1789332135,\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"{\\\"incident\\\":{\\\"dashboards\\\":[\\\"etl-throughput\\\",\\\"postgres-connections\\\"],\\\"recent_change\\\":\\\"a database maintenance window rotated the primary's TLS certificate at 02:00 UTC\\\",\\\"service\\\":\\\"payments-etl\\\",\\\"severity\\\":\\\"critical\\\",\\\"symptom\\\":\\\"the nightly payments_etl job fails with repeated 'connecti",
+  "containment": {
+    "measured": true,
+    "reached": [
+      "allowed-front",
+      "allowed-mcp"
+    ],
+    "denied": [
+      "external-dns",
+      "host-gateway-direct",
+      "internet-ip",
+      "public-dns"
+    ],
+    "served": [
+      "allowed-front"
+    ],
+    "unserved": [],
+    "leaked": [],
+    "positive_control": true,
+    "unprobed": [],
+    "ok": true,
+    "network": "exec-v1-net-gateb6138a26554a"
+  },
+  "checks": [
+    {
+      "check": "E5 over-budget input refused at the door",
+      "ok": true,
+      "detail": "RuntimeError: gate: input is 262156 bytes but the manifest bounds process.input.max_bytes at 262144"
+    },
+    {
+      "check": "E7 scratch create/read/delete as the workload uid",
+      "ok": true,
+      "detail": "OK /home/agent 1001; OK /tmp 1001"
+    },
+    {
+      "check": "E8 the workload's network is bounded: allowed destinations reachable, every other probed destination denied",
+      "ok": true,
+      "detail": "reached=['allowed-front', 'allowed-mcp'] denied=['external-dns', 'host-gateway-direct', 'internet-ip', 'public-dns'] served=['allowed-front'] unserved=[] leaked=[] unprobed=[] positive_control=ok"
+    },
+    {
+      "check": "E3 MCP boundary: no bearer 401, declared bearer initialize + granted tool, undeclared refused",
+      "ok": true,
+      "detail": "NOBEARER 401; BEARER 200; GRANTED ok; UNGRANTED refused"
+    },
+    {
+      "check": "E1 stock workload started, consumed its input and exited 0",
+      "ok": true,
+      "detail": "exit=0 error=None elapsed=0.9s stdout_bytes=1580 stderr_tail=''"
+    },
+    {
+      "check": "E2 model traffic observed only through the front, on the allowed endpoints, naming the granted model",
+      "ok": true,
+      "detail": "model_requests=2 paths=['/v1/chat/completions'] wrong_model=[] off_policy=[]"
+    },
+    {
+      "check": "E2b the front refuses model listing (404), another model (403) and a case-variant key (403)",
+      "ok": true,
+      "detail": "tags=404 wrong_model=403 variant_key=403"
+    },
+    {
+      "check": "E3b the workload's tool traffic carried the declared bearer, and a workload that declared tool grants actually used them",
+      "ok": true,
+      "detail": "workload_mcp_requests=3 unauthenticated=0 per_method={'initialize': 1, 'notifications/initialized': 1, 'tools/list': 1} declared_tool_servers=[] silent_despite_grants=False declared_bearer_env=[]"
+    },
+    {
+      "check": "E4 no credential in env, argv, generated files or output",
+      "ok": true,
+      "detail": "findings=[] andyur_env=[] env_names=['GOOSE_DISABLE_KEYRING', 'GOOSE_MODE', 'GOOSE_MODEL', 'GOOSE_PROVIDER', 'HOME', 'OPENAI_API_KEY', 'OPENAI_HOST', 'PATH']"
+    },
+    {
+      "check": "E5 captured output bounded by process.output.max_bytes (daemon capture)",
+      "ok": true,
+      "detail": "raw=1580 bound=1048576 kept=1580"
+    },
+    {
+      "check": "E5b a 256-byte bound truncates the same output with the marker",
+      "ok": true,
+      "detail": "raw=1580 kept=256 marker=True"
+    },
+    {
+      "check": "E6 killed workload maps to a failed run, never success",
+      "ok": true,
+      "detail": "killed=True exit=137 error='the workload process exited with code 137' elapsed=0.9s"
+    }
+  ],
+  "ok": true
+}

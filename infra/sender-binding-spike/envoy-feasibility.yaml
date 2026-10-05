@@ -1,0 +1,159 @@
+node:
+  id: spiffe://andyur.local/run/feasibility
+  cluster: andyur-sender-binding-feasibility
+static_resources:
+  listeners:
+  - name: agent_ingress
+    address:
+      socket_address: {address: 127.0.0.1, port_value: 10000}
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress
+          max_request_headers_kb: 60
+          common_http_protocol_options:
+            headers_with_underscores_action: REJECT_REQUEST
+          normalize_path: true
+          merge_slashes: false
+          path_with_escaped_slashes_action: REJECT_REQUEST
+          use_remote_address: true
+          generate_request_id: true
+          route_config:
+            name: route
+            virtual_hosts:
+            - name: resource
+              domains: ["resource.example:443"]
+              routes:
+              - match: {path: /mcp}
+                route:
+                  cluster: resource
+                  timeout: 2s
+          http_filters:
+          - name: envoy.filters.http.lua
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+              default_source_code:
+                inline_string: |
+                  local KEEP = {
+                    ["content-type"] = true,
+                    ["content-length"] = true,
+                    ["accept"] = true,
+                    ["mcp-session-id"] = true,
+                    ["mcp-protocol-version"] = true,
+                    ["x-forwarded-proto"] = true
+                  }
+                  function envoy_on_request(handle)
+                    local headers = handle:headers()
+                    local drop = {}
+                    for name, _ in pairs(headers) do
+                      local lower = string.lower(name)
+                      if string.sub(lower, 1, 1) ~= ":" and not KEEP[lower] then
+                        drop[#drop + 1] = name
+                      end
+                    end
+                    for _, name in ipairs(drop) do headers:remove(name) end
+                  end
+          - name: envoy.filters.http.ext_authz
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+              failure_mode_allow: false
+              transport_api_version: V3
+              with_request_body:
+                max_request_bytes: 65536
+                allow_partial_message: false
+              http_service:
+                server_uri:
+                  uri: http://broker
+                  cluster: broker
+                  timeout: 0.850s
+                authorization_response:
+                  allowed_upstream_headers:
+                    patterns:
+                    - {exact: authorization}
+                    - {exact: dpop}
+                    - {exact: x-andyur-decision-id}
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+  clusters:
+  - name: broker
+    type: STATIC
+    connect_timeout: 0.100s
+    load_assignment:
+      cluster_name: broker
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              pipe: {path: /tmp/andyur-broker.sock}
+  - name: resource
+    type: STATIC
+    connect_timeout: 0.500s
+    circuit_breakers:
+      thresholds:
+      - priority: DEFAULT
+        max_connections: 8
+        max_pending_requests: 8
+        max_requests: 8
+        max_retries: 0
+    load_assignment:
+      cluster_name: resource
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: {address: 127.0.0.1, port_value: 18080}
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        sni: resource.example
+        common_tls_context:
+          tls_params:
+            tls_minimum_protocol_version: TLSv1_2
+          tls_certificate_sds_secret_configs:
+          - name: spiffe://andyur.local/run/feasibility
+            sds_config:
+              resource_api_version: V3
+              api_config_source:
+                api_type: GRPC
+                transport_api_version: V3
+                grpc_services:
+                - envoy_grpc: {cluster_name: spire_agent}
+          combined_validation_context:
+            default_validation_context:
+              match_typed_subject_alt_names:
+              - san_type: URI
+                matcher: {exact: "spiffe://andyur.local/resource/feasibility"}
+            validation_context_sds_secret_config:
+              name: spiffe://andyur.local
+              sds_config:
+                resource_api_version: V3
+                api_config_source:
+                  api_type: GRPC
+                  transport_api_version: V3
+                  grpc_services:
+                  - envoy_grpc: {cluster_name: spire_agent}
+  - name: spire_agent
+    type: STATIC
+    connect_timeout: 0.100s
+    http2_protocol_options: {}
+    load_assignment:
+      cluster_name: spire_agent
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              pipe: {path: /run/spire/sockets/api.sock}
+admin:
+  access_log_path: /dev/null
+  address:
+    pipe: {path: /tmp/andyur-envoy-admin.sock}
+overload_manager:
+  resource_monitors:
+  - name: envoy.resource_monitors.global_downstream_max_connections
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.resource_monitors.downstream_connections.v3.DownstreamConnectionsConfig
+      max_active_downstream_connections: 32

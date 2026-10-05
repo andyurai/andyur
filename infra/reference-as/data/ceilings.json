@@ -1,0 +1,13 @@
+{
+  "sre": {
+    "actions": ["telemetry:read", "tickets:read", "tickets:write"],
+    "audiences": [
+      "https://telemetry.internal/teams/*",
+      "https://tickets.internal/incidents"
+    ]
+  },
+  "reader": {
+    "actions": ["telemetry:read"],
+    "audiences": ["https://telemetry.internal/teams/*"]
+  }
+}

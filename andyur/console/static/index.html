@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Andyur Console</title>
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header>
+  <h1>andyur</h1>
+  <nav class="tabs" aria-label="sections">
+    <a class="tab" href="#/agents" data-tab="agents">Agents</a>
+    <a class="tab" href="#/catalog" data-tab="catalog">Catalog</a>
+    <a class="tab" href="#/runs" data-tab="runs">Runs</a>
+    <a class="tab" href="#/workers" data-tab="workers" id="workersTab" hidden>Workers</a>
+  </nav>
+  <span class="spacer"></span>
+  <span class="meta" id="who"></span>
+  <span class="meta" id="cp"></span>
+  <button data-action="refresh">Refresh</button>
+</header>
+
+<main id="view" class="wrap"></main>
+
+<div id="toast"></div>
+</body>
+</html>

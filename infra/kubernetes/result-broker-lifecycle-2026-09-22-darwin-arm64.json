@@ -1,0 +1,40 @@
+{
+  "adopted_directory": "2750 1000 1000 socket=660",
+  "broker_restart_count": 1,
+  "cluster_version": "v1.29.5+k3s1",
+  "controller_rollback": {
+    "permanent_refusal": "run-group launch failed (Kubernetes proxy for run 42fa9462309e4e189b1dea87bb42aba8 was not ready within 5.0s); proxy produced no output",
+    "positive_lease": "andyur-run-c40937a4d7f3f14ebb2df5eb172655db-owner",
+    "positive_ready_launch": true,
+    "positive_teardown_absent": true,
+    "ready_timeout_seconds": 5.0,
+    "refused_agent_absent_after_rollback": true,
+    "refused_generation_absent": true,
+    "refused_lease_released": true,
+    "surrogate_image": "localhost:5000/andyur-server@sha256:6e0ee495eac17e96d3d1b1890ac726c3acd1046a32ee704a393d86004b53794b"
+  },
+  "executed_source_sha256": {
+    "andyur/dataplane/brokeruds.py": "da4f799655fb6044b97772e7817a0100e1d5dd356e758e43d31d819db213244d",
+    "andyur/dataplane/denybroker.py": "b09149a33e0066f6b09792ee86cdc8358f4cd1e1fb72eefd20ffafa66f69335c"
+  },
+  "finished_at_epoch": 1790035176.438715,
+  "image": "localhost:5000/andyur-server:s16-25e80ff-92714",
+  "image_id": "docker-pullable://localhost:5000/andyur-server@sha256:6e0ee495eac17e96d3d1b1890ac726c3acd1046a32ee704a393d86004b53794b",
+  "native_sidecars": [
+    "broker-restart",
+    "envoy-shape"
+  ],
+  "pod_phase_after_runner_exit": "Succeeded",
+  "rebound_socket_connect": "connected",
+  "source_sha256": {
+    "andyur/daemon/kubernetes_api.py": "bb72974d9f9daf825c48dfa0783f9e842f2cea042266ab9897d60fa70dfc7186",
+    "andyur/daemon/kubernetes_controller.py": "b03dbe757e75d13c49846180178caeaeace4a71f35b551edfa54ee0c97d91b52",
+    "andyur/daemon/kubernetes_manifests.py": "a811c5296bbf02caea11c12b75f0e6f2423c0e09044262ea8d3cd4d4d437b33a",
+    "andyur/dataplane/brokeruds.py": "da4f799655fb6044b97772e7817a0100e1d5dd356e758e43d31d819db213244d",
+    "andyur/dataplane/denybroker.py": "b09149a33e0066f6b09792ee86cdc8358f4cd1e1fb72eefd20ffafa66f69335c",
+    "infra/kubernetes/verify-broker-lifecycle.py": "24d9cf5ba1e44d2c61ed3d56d9e4868753a5004aa52f7986f15346a48e9ddb81",
+    "infra/kubernetes/verify-broker-lifecycle.sh": "e3af662a3437780c2da781e117e6590275771b1283191ed389832e2c6c069305"
+  },
+  "started_at_epoch": 1790035092.1420732,
+  "teardown_absent": true
+}

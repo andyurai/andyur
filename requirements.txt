@@ -1,0 +1,43 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+httpx>=0.27
+python-dotenv>=1.0
+claude-agent-sdk>=0.1
+# The runtime tool service imports the official SDK's FastMCP/streamable-HTTP
+# server directly.  Depending on claude-agent-sdk's unconstrained transitive
+# choice let clean installs select an older `mcp` that lacks this API.
+mcp>=1.28,<2
+croniter>=2.0
+spiffe>=0.3,<0.4
+pyjwt>=2.8          # validate OIDC user tokens (U1) + sign/verify delegated tokens (U4)
+cryptography>=42    # RS256 keys for the token-exchange JWKS (U4)
+# Mature RFC 9449 proof/nonce implementation for the per-run managed sidecar.
+requests-oauth2client>=1.8,<2
+opentelemetry-sdk>=1.27
+opentelemetry-exporter-otlp-proto-http>=1.27
+# Official Kubernetes API transport for the production run-group orchestrator.
+# Keep one minor line aligned with the supported cluster API; the orchestration
+# policy itself remains behind andyur.daemon.kubernetes_controller.KubernetesApi.
+kubernetes>=36.0,<37
+# Postgres driver, plus a connection pool.
+#
+# KNOWN HAZARD, and why the pool is not optional. The [binary] wheel bundles its
+# own libpq AND its own OpenSSL, which then coexists with the OpenSSL that
+# Python's ssl module already loaded: two copies with separate allocator state
+# in one process. Under a burst of concurrent SCRAM authentications the macOS
+# malloc guard tripped and the interpreter aborted --
+#
+#   nanov2_guard_corruption_detected <- CRYPTO_zalloc <- HMAC_Init_ex
+#                                    <- pg_hmac_init <- scram_exchange
+#
+# -- observed on this project, with 15 of 37 threads inside libpq at the time.
+# Pooling is the portable fix: it removes almost every handshake (measured 1002
+# requests served by 10 connections instead of 1002). For production, prefer
+# `psycopg[c]`, which builds against the system libpq and links ONE OpenSSL, and
+# removes the hazard rather than reducing its frequency. It is not the default
+# here only because it needs libpq development headers (pg_config) that a plain
+# `pip install` cannot provide.
+psycopg[binary]>=3.1
+psycopg_pool>=3.2
+boto3>=1.34
+neo4j>=5.26

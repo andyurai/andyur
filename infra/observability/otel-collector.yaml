@@ -1,0 +1,100 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # THE WORKFLOW ENGINE'S OWN METRICS, pulled rather than pushed: Temporal
+  # exposes Prometheus and does not speak OTLP. Scraped here so the engine is
+  # visible in the same place as everything else -- an engine nobody can see is
+  # one nobody can operate, and this platform treats that as an exit criterion
+  # rather than a nice-to-have.
+  #
+  # A STATIC TARGET, not a discovery rule. Service discovery would need the
+  # Collector to hold Kubernetes API credentials, and it currently holds none;
+  # buying visibility with an API token for a component that only ever scrapes
+  # one address is the wrong trade.
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: andyur-temporal
+          scrape_interval: 30s
+          static_configs:
+            - targets: ["andyur-temporal:9090"]
+          # RENAMED AT SCRAPE, OR EVERY ONE OF THEM IS DROPPED. Temporal labels
+          # its own series `service_name` (frontend, history, matching,
+          # worker), and the Prometheus exporter's
+          # `resource_to_telemetry_conversion` adds a SECOND `service_name`
+          # from the resource. The exporter refuses the duplicate -- "duplicate
+          # label names in constant and variable labels" -- for every such
+          # series, so the export held the scrape's own bookkeeping and not one
+          # Temporal metric. That was reported as working, on the strength of
+          # the samples being SCRAPED; nobody had checked they were EXPORTED.
+          # Kept under `temporal_service`, since which service a series came
+          # from is exactly what an operator needs.
+          metric_relabel_configs:
+            - source_labels: [service_name]
+              target_label: temporal_service
+            - regex: service_name
+              action: labeldrop
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  batch:
+    send_batch_size: 512
+    timeout: 5s
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:9464
+    namespace: andyur
+    resource_to_telemetry_conversion:
+      enabled: true
+  # THE TRACE BACKEND, named for traces specifically. The default one (Jaeger)
+  # declares a traces-only pipeline, so metrics sent here were a permanent,
+  # silent 404 loop -- every batch dropped, forever, in the cluster as well as
+  # on a laptop:
+  #
+  #   exporter otlp_http/backend signal metrics -- Permanent error: request to
+  #   http://jaeger:4318/v1/metrics responded with 404 ... dropped_items: 23
+  #
+  # A signal is never exported to a backend that cannot receive it.
+  otlp_http/backend:
+    endpoint: ${env:ANDYUR_TELEMETRY_BACKEND_OTLP_ENDPOINT}
+    sending_queue:
+      enabled: true
+      queue_size: 2048
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 10s
+      max_elapsed_time: 60s
+
+service:
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/backend]
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, batch]
+      # Prometheus only: see otlp_http/backend above. An exporter that fails
+      # every batch forever is worse than no exporter, because it looks exactly
+      # like a working one. THE SEAM for an adopter with a real metrics backend
+      # is here -- add an `otlp_http/metrics` exporter pointing at it and list
+      # it beside `prometheus`. Nothing else in the platform changes.
+      exporters: [prometheus]

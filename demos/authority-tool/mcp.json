@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "bank": {
+      "type": "http",
+      "url": "http://127.0.0.1:8795/mcp",
+      "andyur": { "authority": true }
+    }
+  }
+}

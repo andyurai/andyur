@@ -1,0 +1,456 @@
+{
+ "cluster_version": "v1.29.5+k3s1",
+ "controller_identity": "system:serviceaccount:andyur-exec-tool-call-960c9927:andyur-worker-gate",
+ "executed_source_sha256": {
+  "andyur/execconfig.py": "958e2e39b1c748ab997129898fc3e5f717e18588cb0aa0c115e3b0422e40afd9",
+  "andyur/identity.py": "f916562f84b4c7b36d041a9f01b20e1436f3d9aa13f6f14e8f0f3cbaffdb758a",
+  "andyur/runner/execfront.py": "8b178beb43a90874ad17570a87ad8fb050d0e80576a2a01211433c06a7d94bf3",
+  "andyur/runner/runner.py": "6124eafe1783b8f64178d4ddcbb974dc039a091e2c89cf7906f9e65cf5d7f851",
+  "andyur/runner/toolservice.py": "b439ba37a9c4833d1663aee49e4889e27f2cf276094b54395b18c7cadfced4ec"
+ },
+ "finished_at_epoch": 1791141732.421014,
+ "gate": "exec-tool-call",
+ "host": "macOS-14.8.3-arm64-arm-64bit",
+ "image": "localhost:5000/andyur-exec-tool-call@sha256:2672d5f9c922091a6a198c349cf603ad1b93e38351585878902f7f111924294e",
+ "image_id": "docker-pullable://localhost:5000/andyur-exec-tool-call@sha256:2672d5f9c922091a6a198c349cf603ad1b93e38351585878902f7f111924294e",
+ "no_front_rollback": {
+  "error": "RuntimeError: run-group launch failed (Kubernetes proxy for run 40a7393eb4fa4b13a7c129f59fac0a52 was not ready within 25.0s); proxy tail:\n{\"event\":\"log.message\",\"logger\":\"mcp.server.streamable_http_manager\",\"message\":\"StreamableHTTP session manager started\",\"schema\":\"andyur.log.v1\",\"service\":\"andyur",
+  "launched": false,
+  "ok": true,
+  "ready_timeout": 25.0,
+  "refused_for_readiness": true,
+  "resources_absent": true,
+  "rollback_prompt": true,
+  "rollback_seconds": 1.66,
+  "run_id": "40a7393eb4fa4b13a7c129f59fac0a52",
+  "seconds": 26.66
+ },
+ "not_covered": "server-side scope refusal (auth.require_scope) needs the in-cluster control plane + SPIRE registration: kubernetes-verify lane",
+ "ok": true,
+ "otel": {
+  "endpoint": "http://otel-collector.andyur-system.svc:4318",
+  "mode": "on",
+  "readback": "jaeger v3 API by trace id, from the operator"
+ },
+ "source_sha256": {
+  "andyur/daemon/governed_kubernetes.py": "0ee8ecc96ec87df3123f0b5449ea7486923c73bfe7536a1e8fdf8711eb6daf61",
+  "andyur/daemon/kubernetes_api.py": "bb72974d9f9daf825c48dfa0783f9e842f2cea042266ab9897d60fa70dfc7186",
+  "andyur/daemon/kubernetes_controller.py": "b03dbe757e75d13c49846180178caeaeace4a71f35b551edfa54ee0c97d91b52",
+  "andyur/daemon/kubernetes_manifests.py": "a811c5296bbf02caea11c12b75f0e6f2423c0e09044262ea8d3cd4d4d437b33a",
+  "andyur/execconfig.py": "958e2e39b1c748ab997129898fc3e5f717e18588cb0aa0c115e3b0422e40afd9",
+  "andyur/identity.py": "f916562f84b4c7b36d041a9f01b20e1436f3d9aa13f6f14e8f0f3cbaffdb758a",
+  "andyur/runner/driver.py": "7f55cab4c650c8a8c3e3fac889a37525ad4f792e12f8c9a90cbb617ee0615447",
+  "andyur/runner/execfront.py": "8b178beb43a90874ad17570a87ad8fb050d0e80576a2a01211433c06a7d94bf3",
+  "andyur/runner/runner.py": "6124eafe1783b8f64178d4ddcbb974dc039a091e2c89cf7906f9e65cf5d7f851",
+  "andyur/runner/toolservice.py": "b439ba37a9c4833d1663aee49e4889e27f2cf276094b54395b18c7cadfced4ec",
+  "infra/kubernetes/bounded_exec.py": "3e30ee8a1813ede78da739c54e76730f53c2aa2c81e17f53d726ddcc1f09cc1a",
+  "infra/kubernetes/observability.yaml": "31403d8fbd9a8c627f49f257afc78dc48e5ea23df5351a1fb6dd19f1327e484d",
+  "infra/kubernetes/run-isolation.yaml": "e82a8fb71cf10899ced38a584ffcc1350450859f8ff27806cf247482d49fc1de",
+  "infra/kubernetes/verify-exec-input.py": "8c604f65930242f70e5b7aa439a34b7243202f821c7129497546b4a7891cca08",
+  "infra/kubernetes/verify-exec-tool-call.py": "bf60ae66584d9fff5c306969dde5797b664d7c8bd61e20dd0f99a66246ffa991",
+  "infra/kubernetes/verify-exec-tool-call.sh": "b7395e1ac74e83f046f6da3e403031c45954265ff99a27ac5610a281ae1da1a6",
+  "infra/observability/jaeger.yaml": "67533c071969b27be7e59162f1f9d502273b3a08d0383f020495ea111d9935a9",
+  "infra/observability/otel-collector.yaml": "9b221c5338cac52894a1793eac62f68ad0bdacc9205d47562abf24370cc414e7",
+  "infra/observability/trace_readback.py": "dd0a988097216c4a3fdf280aa73bbf0ed4d55439f49fb98b0d656251943b720a"
+ },
+ "started_at_epoch": 1791141680.452785,
+ "teardown_absent": true,
+ "tool_call": {
+  "checks": {
+   "bare_token_without_scheme_401": true,
+   "channel_token_as_bearer_401": true,
+   "collector_from_agent_denied_sustained_after_proxy_allow": true,
+   "collector_from_proxy_allowed_within_bound": true,
+   "credentials_absent_from_workload": true,
+   "declared_bearer_is_a_header_value": true,
+   "declared_initialized_and_listed_the_real_registry": true,
+   "declared_tool_call_reached_the_tool_body": true,
+   "front_case_variant_model_key_403": true,
+   "front_granted_call_passes_policy_503_no_upstream": true,
+   "front_model_delete_404": true,
+   "front_model_listing_404": true,
+   "front_ready_200_on_proxy_port": true,
+   "front_wrong_model_403": true,
+   "group_delete_prompt": true,
+   "group_delete_prompt_with_open_stream": true,
+   "no_bearer_401": true,
+   "rendered_file_matches_env": true,
+   "resources_absent": true,
+   "trace_front_refusals_by_name": true,
+   "trace_mcp_bearer_rejected": true,
+   "trace_read_back_by_id": true,
+   "trace_serve_exit_by_name": true,
+   "undeclared_tool_refused": true,
+   "workload_completed": true,
+   "wrong_bearer_401": true
+  },
+  "collector_from_proxy": "allow",
+  "collector_from_proxy_bound_seconds": 15.0,
+  "collector_from_proxy_seconds": 0.5,
+  "delete_seconds": 0.79,
+  "launch_seconds": 2.39,
+  "mcp_stream_open_during_delete": true,
+  "ok": true,
+  "phase": "Succeeded",
+  "probes": {
+   "absence": {
+    "channel_token": true,
+    "litellm_key": true,
+    "run_token": true
+   },
+   "bare": {
+    "error": "ExceptionGroup",
+    "refused": true,
+    "status": 401
+   },
+   "channel": {
+    "error": "ExceptionGroup",
+    "refused": true,
+    "status": 401
+   },
+   "collector_from_agent": {
+    "after_positive_control": true,
+    "attempts": 8,
+    "denied": 8,
+    "reachable": false,
+    "target": "10.43.43.179:4318",
+    "window_seconds": 5.0
+   },
+   "declared": {
+    "call_is_error": true,
+    "call_returned": true,
+    "call_text": "Invalid WorkloadApiClient configuration: SPIFFE socket file \"/spiffe-workload-api/spire-agent.sock\" does not exist.",
+    "initialized": true,
+    "server": "andyur",
+    "tools": [
+     "append_long_term_memory",
+     "create_task",
+     "handle_message",
+     "request_rollback",
+     "search_memory_graph",
+     "send_message",
+     "update_short_term_memory",
+     "update_task"
+    ]
+   },
+   "delivery": {
+    "auth_is_header_value": true,
+    "mcp_url": "http://10.42.0.144:8766/mcp",
+    "model_url": "http://10.42.0.144:8765/llm",
+    "rendered_auth_matches_env": true,
+    "rendered_mcp_matches_env": true
+   },
+   "done": {
+    "ok": true
+   },
+   "front": {
+    "delete_status": 404,
+    "granted_body": "{\"error\":\"no_model_proxy\",\"detail\":\"this run has no model proxy to forward to\"}",
+    "granted_status": 503,
+    "ready_body": "{\"ready\":true,\"model_proxy\":false}",
+    "ready_status": 200,
+    "tags_status": 404,
+    "variant_key_status": 403,
+    "wrong_model_status": 403
+   },
+   "none": {
+    "error": "ExceptionGroup",
+    "refused": true,
+    "status": 401
+   },
+   "undeclared": {
+    "refused": true,
+    "text": "Tool 'not_a_declared_tool' not found"
+   },
+   "wrong": {
+    "error": "ExceptionGroup",
+    "refused": true,
+    "status": 401
+   }
+  },
+  "proxy_command_is_the_real_serve_only_services": true,
+  "proxy_log_tail": "r\",\"message\":\"Tool 'not_a_declared_tool' not listed, no validation will be performed\",\"schema\":\"andyur.log.v1\",\"service\":\"andyur-runner\",\"severity\":\"WARNING\",\"span_id\":\"905016fdc48a2244\",\"timestamp\":\"2026-10-04T19:21:30.256165+00:00\",\"trace_id\":\"9b14ad92754b7d6515dcaa429c9db74b\"}\n{\"event\":\"log.message\",\"logger\":\"mcp.server.streamable_http\",\"message\":\"Terminating session: b2ef9ff8b1954a68a5ff77ce2c26a5f0\",\"schema\":\"andyur.log.v1\",\"service\":\"andyur-runner\",\"severity\":\"INFO\",\"span_id\":\"a78efdb9c38b9d29\",\"timestamp\":\"2026-10-04T19:21:30.257620+00:00\",\"trace_id\":\"9b14ad92754b7d6515dcaa429c9db74b\"}\n",
+  "proxy_ready_condition": true,
+  "resources_absent": true,
+  "run_id": "21c411cd0ac54e668fa9201de02b4b0b",
+  "trace": {
+   "dangling_parent_spans": [],
+   "expected": [
+    "exec-tool-call-gate.serve",
+    "runner.serve",
+    "execfront POST",
+    "execfront GET",
+    "mcp POST"
+   ],
+   "expected_missing": [],
+   "expected_present": true,
+   "root_spans": [
+    "exec-tool-call-gate.serve"
+   ],
+   "services": [
+    "andyur-runner"
+   ],
+   "span_count": 20,
+   "span_names": [
+    "exec-tool-call-gate.serve",
+    "execfront DELETE",
+    "execfront GET",
+    "execfront POST",
+    "mcp DELETE",
+    "mcp GET",
+    "mcp POST",
+    "mcp.tool send_message",
+    "runner.serve"
+   ],
+   "spans": [
+    {
+     "attributes": {
+      "andyur.decision": "admitted",
+      "andyur.external": true,
+      "andyur.refusal": "none",
+      "http.request.method": "POST",
+      "http.response.status_code": 200
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "admitted",
+      "andyur.external": true,
+      "andyur.refusal": "none",
+      "http.request.method": "POST",
+      "http.response.status_code": 200
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "admitted",
+      "andyur.external": true,
+      "andyur.refusal": "none",
+      "http.request.method": "POST",
+      "http.response.status_code": 202
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "admitted",
+      "andyur.external": true,
+      "andyur.refusal": "none",
+      "http.request.method": "POST",
+      "http.response.status_code": 200
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.outcome": "failure",
+      "andyur.reason": "ArgumentError",
+      "andyur.run_id": "21c411cd0ac54e668fa9201de02b4b0b",
+      "andyur.tool.name": "send_message"
+     },
+     "name": "mcp.tool send_message",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "admitted",
+      "andyur.external": true,
+      "andyur.refusal": "none",
+      "http.request.method": "POST",
+      "http.response.status_code": 200
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "admitted",
+      "andyur.external": true,
+      "andyur.refusal": "none",
+      "http.request.method": "POST",
+      "http.response.status_code": 200
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "admitted",
+      "andyur.external": true,
+      "andyur.refusal": "none",
+      "http.request.method": "DELETE",
+      "http.response.status_code": 200
+     },
+     "name": "mcp DELETE",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "admitted",
+      "andyur.external": true,
+      "andyur.refusal": "none",
+      "http.request.method": "GET",
+      "http.response.status_code": 200
+     },
+     "name": "mcp GET",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "refused",
+      "andyur.external": true,
+      "andyur.refusal": "bearer_rejected",
+      "http.request.method": "POST",
+      "http.response.status_code": 401
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "refused",
+      "andyur.external": true,
+      "andyur.refusal": "bearer_rejected",
+      "http.request.method": "POST",
+      "http.response.status_code": 401
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "refused",
+      "andyur.external": true,
+      "andyur.refusal": "bearer_rejected",
+      "http.request.method": "POST",
+      "http.response.status_code": 401
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.decision": "refused",
+      "andyur.external": true,
+      "andyur.refusal": "bearer_rejected",
+      "http.request.method": "POST",
+      "http.response.status_code": 401
+     },
+     "name": "mcp POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.agent": "stock",
+      "andyur.decision": "refused",
+      "andyur.execfront.path_bytes": 13,
+      "andyur.execfront.path_segments": 3,
+      "andyur.execfront.route": "/api/chat",
+      "andyur.external": true,
+      "andyur.model.granted": "gate-model:latest",
+      "andyur.refusal": "no_model_proxy",
+      "andyur.run_id": "21c411cd0ac54e668fa9201de02b4b0b",
+      "http.request.method": "POST",
+      "http.response.status_code": 503
+     },
+     "name": "execfront POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.agent": "stock",
+      "andyur.decision": "refused",
+      "andyur.execfront.path_bytes": 13,
+      "andyur.execfront.path_segments": 3,
+      "andyur.execfront.route": "/api/chat",
+      "andyur.external": true,
+      "andyur.model.granted": "gate-model:latest",
+      "andyur.model.requested": "other-model",
+      "andyur.refusal": "model_not_granted",
+      "andyur.run_id": "21c411cd0ac54e668fa9201de02b4b0b",
+      "http.request.method": "POST",
+      "http.response.status_code": 403
+     },
+     "name": "execfront POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.agent": "stock",
+      "andyur.decision": "refused",
+      "andyur.execfront.path_bytes": 13,
+      "andyur.execfront.path_segments": 3,
+      "andyur.execfront.route": "/api/chat",
+      "andyur.external": true,
+      "andyur.model.granted": "gate-model:latest",
+      "andyur.model.requested": "gate-model:latest",
+      "andyur.refusal": "model_key_variant",
+      "andyur.run_id": "21c411cd0ac54e668fa9201de02b4b0b",
+      "http.request.method": "POST",
+      "http.response.status_code": 403
+     },
+     "name": "execfront POST",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.agent": "stock",
+      "andyur.decision": "refused",
+      "andyur.execfront.path_bytes": 13,
+      "andyur.execfront.path_segments": 3,
+      "andyur.execfront.route": "not-a-model-call",
+      "andyur.external": true,
+      "andyur.model.granted": "gate-model:latest",
+      "andyur.refusal": "path_not_model_call",
+      "andyur.run_id": "21c411cd0ac54e668fa9201de02b4b0b",
+      "http.request.method": "GET",
+      "http.response.status_code": 404
+     },
+     "name": "execfront GET",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.agent": "stock",
+      "andyur.decision": "refused",
+      "andyur.execfront.path_bytes": 15,
+      "andyur.execfront.path_segments": 3,
+      "andyur.execfront.route": "not-a-model-call",
+      "andyur.external": true,
+      "andyur.model.granted": "gate-model:latest",
+      "andyur.refusal": "path_not_model_call",
+      "andyur.run_id": "21c411cd0ac54e668fa9201de02b4b0b",
+      "http.request.method": "DELETE",
+      "http.response.status_code": 404
+     },
+     "name": "execfront DELETE",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.serve.exit": "sigterm",
+      "andyur.serve.ttl_seconds": 3600
+     },
+     "name": "runner.serve",
+     "service": "andyur-runner"
+    },
+    {
+     "attributes": {
+      "andyur.run_id": "21c411cd0ac54e668fa9201de02b4b0b"
+     },
+     "name": "exec-tool-call-gate.serve",
+     "service": "andyur-runner"
+    }
+   ],
+   "trace_id": "9b14ad92754b7d6515dcaa429c9db74b",
+   "waited_seconds": 2.1
+  },
+  "traceparent": "00-9b14ad92754b7d6515dcaa429c9db74b-7a1efd3fd33db354-03"
+ }
+}

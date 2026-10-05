@@ -1,0 +1,19 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_teller",
+  "name": "teller",
+  "instructions": "Use only the bank resource authorized by the registry ceiling.",
+  "model": null,
+  "tools": [
+    {
+      "name": "bank",
+      "reach_url": "http://authority-tool:8080/mcp",
+      "resource_id": "tool:bank",
+      "authority": "managed"
+    }
+  ],
+  "ceiling": {
+    "actions": null,
+    "resources": ["tool:bank"]
+  }
+}

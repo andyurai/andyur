@@ -1,0 +1,1289 @@
+# Single-instance Andyur control plane. Replace every example image digest and
+# create the andyur-secrets Secret before applying; no credential is shipped.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: andyur-system
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: andyur-server
+  namespace: andyur-system
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: andyur-worker
+  namespace: andyur-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: andyur-operator
+  namespace: andyur-system
+automountServiceAccountToken: false
+---
+# THE ENGINE'S EXECUTION WORKER: its own ServiceAccount, and its own SPIFFE ID
+# below, rather than the worker daemon's. Both can launch a run, but only this
+# one polls the engine -- and the engine's authorizer admits it by name, so
+# reusing the daemon's identity would re-open the route the review closed.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: andyur-temporal-execution-worker
+  namespace: andyur-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: andyur-worker-isolation-preflight
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    resourceNames: [andyur-runs]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: andyur-worker-isolation-preflight
+subjects:
+  - kind: ServiceAccount
+    name: andyur-worker
+    namespace: andyur-system
+  # The execution worker launches runs too, and the launch refuses until the
+  # run namespace's isolation stamp is readable and fresh.
+  - kind: ServiceAccount
+    name: andyur-temporal-execution-worker
+    namespace: andyur-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: andyur-worker-isolation-preflight
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: andyur-server-data
+  namespace: andyur-system
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: andyur-ollama
+  namespace: andyur-system
+spec:
+  selector:
+    app: andyur-ollama
+  ports:
+    - {name: http, port: 11434, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: andyur-ollama
+  namespace: andyur-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: andyur-ollama}
+  template:
+    metadata:
+      labels: {app: andyur-ollama}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: bridge
+          image: alpine/socat@sha256:87d88ff79bf42ca723fb360e9585c40e2923a2f4df9b9d148b127568ef6b99e7
+          args: ["TCP-LISTEN:11434,fork,reuseaddr", "TCP:192.168.5.2:11434"]
+          ports: [{name: http, containerPort: 11434}]
+          readinessProbe: {tcpSocket: {port: http}, periodSeconds: 2}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: andyur-operator
+  namespace: andyur-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: andyur-operator}
+  template:
+    metadata:
+      labels: {app: andyur-operator}
+    spec:
+      serviceAccountName: andyur-operator
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: operator
+          image: registry.example/andyur-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          command: ["sleep", "infinity"]
+          env:
+            # PROD, AND THE IdP THAT MAKES PROD BOOTABLE.
+            #
+            # This shipped as `prod` with no identity provider anywhere in the
+            # reference deployment, and prod refuses to start without
+            # ANDYUR_USER_AUTH=on ("production runs must inherit an
+            # enterprise-authenticated subject"). So every container exited 3 on
+            # config.InsecureProfile, and the only reason any cluster ever ran
+            # was an operator hand-editing the profile after applying -- an edit
+            # that existed in nobody's manifest. Found by deploying the partner
+            # bundle into a real cluster from a directory with no checkout.
+            #
+            # The profile is unchanged and the missing half is supplied:
+            # infra/kubernetes/idp.yaml deploys the reference IdP, and the
+            # server below validates user tokens against it. Apply idp.yaml
+            # first, or the server refuses to start -- which is correct, and is
+            # now a refusal an operator can act on.
+            - {name: ANDYUR_PROFILE, value: prod}
+            # The user axis, on every container that asserts the prod profile:
+            # `assert_profile` requires it of whoever calls it, and the server,
+            # the daemon and the broker-state backend all do. One deployment,
+            # one identity configuration -- a container that satisfied the
+            # profile differently from its neighbours would be the interesting
+            # question nobody wants to answer at 3am.
+            - {name: ANDYUR_USER_AUTH, value: "on"}
+            - {name: ANDYUR_OIDC_ISSUER, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur"}
+            - {name: ANDYUR_OIDC_AUDIENCE, value: andyur}
+            - {name: ANDYUR_OIDC_JWKS, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur/protocol/openid-connect/certs"}
+            # WITHOUT THIS NOBODY IS AN ADMIN. `config.ADMIN_ROLE` is unset by
+            # default and the check fails closed, so a deployment that turns
+            # user-auth on and does not name the role has no admin at all: the
+            # ops surfaces answer 403 to everyone, and `GET /agents` shows each
+            # user only their own. Every agent created BEFORE user-auth has no
+            # owner, so with no admin they are invisible to everybody -- which
+            # is how the first gate run after this change reported an empty
+            # agent list and then 409'd creating one that was already there.
+            # The role name is the realm's (infra/keycloak/realm-andyur.json).
+            - {name: ANDYUR_ADMIN_ROLE, value: andyur-admin}
+            - {name: ANDYUR_OTEL, value: "on"}
+            - {name: ANDYUR_OTEL_ENDPOINT, value: "http://otel-collector.andyur-system.svc:4318"}
+            - {name: ANDYUR_SERVER_URL, value: "http://andyur-server.andyur-system.svc:8642"}
+            - {name: ANDYUR_TRUST_DOMAIN, value: andyur.local}
+            - {name: ANDYUR_SPIFFE_ID, value: "spiffe://andyur.local/operator"}
+            - {name: SPIFFE_ENDPOINT_SOCKET, value: "unix:///spiffe-workload-api/spire-agent.sock"}
+            - {name: ANDYUR_REQUIRE_RUN_SVID, value: "on"}
+          resources:
+            requests: {cpu: 10m, memory: 64Mi}
+            limits: {cpu: 200m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: spiffe-workload-api
+          csi: {driver: csi.spiffe.io, readOnly: true}
+        - {name: tmp, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: andyur-server
+  namespace: andyur-system
+spec:
+  selector:
+    app: andyur-server
+  ports:
+    - name: http
+      port: 8642
+      targetPort: http
+    - name: broker-state
+      port: 9443
+      targetPort: broker-state
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: andyur-server
+  namespace: andyur-system
+spec:
+  serviceName: andyur-server
+  replicas: 1
+  selector:
+    matchLabels:
+      app: andyur-server
+  template:
+    metadata:
+      labels:
+        app: andyur-server
+    spec:
+      serviceAccountName: andyur-server
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        # THE CLIENT CERTIFICATE FOR THE WORKFLOW ENGINE, fetched before
+        # anything that might dial it. The engine's frontend requires client
+        # auth, so the control plane is a client like any other and presents
+        # its own SVID. Fetched once here rather than left to the rotating
+        # sidecar, which starts in PARALLEL with the main containers: the
+        # server would come up, find no key file, and fail intermittently
+        # depending on which won the race.
+        - name: temporal-svid-bootstrap
+          image: ghcr.io/spiffe/spiffe-helper@sha256:1c92e5998ad3621e3323f25aabe40f5a88ba730ee0edb248aa8c943ca504e8a2
+          args: ["-config", "/conf/helper.conf", "-daemon-mode=false"]
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: temporal-svid, mountPath: /svid}
+            - {name: temporal-spiffe-helper-conf, mountPath: /conf, readOnly: true}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+        - name: broker-ingress-config
+          image: registry.example/andyur-server@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          command: ["python", "-m", "andyur.dataplane.brokertransport", "--write-ingress-config"]
+          env:
+            - {name: ANDYUR_TRUST_DOMAIN, value: andyur.local}
+            - {name: ANDYUR_SPIFFE_ID, value: "spiffe://andyur.local/control-plane"}
+            - {name: ANDYUR_BROKER_STATE_PORT, value: "9443"}
+            - {name: ANDYUR_BROKER_STATE_BACKEND_SOCKET, value: /run/andyur-server-root/broker/state.sock}
+            - {name: ANDYUR_BROKER_INGRESS_CONFIG, value: /config/bootstrap.json}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi, ephemeral-storage: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi, ephemeral-storage: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: broker-envoy-config, mountPath: /config}
+      containers:
+        - name: server
+          image: registry.example/andyur-server@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: ANDYUR_PROFILE, value: prod}
+            - {name: ANDYUR_OTEL, value: "on"}
+            - {name: ANDYUR_OTEL_ENDPOINT, value: "http://otel-collector.andyur-system.svc:4318"}
+            - {name: ANDYUR_DEPLOYMENT, value: kubernetes}
+            - {name: ANDYUR_SANDBOX, value: "on"}
+            - {name: ANDYUR_AGENT_AUTH, value: "on"}
+            - {name: ANDYUR_DELEGATIONS, value: "*"}
+            - {name: ANDYUR_DATA_DIR, value: /var/lib/andyur}
+            - {name: ANDYUR_TRUST_DOMAIN, value: andyur.local}
+            - {name: ANDYUR_SPIFFE_ID, value: "spiffe://andyur.local/control-plane"}
+            # THE ENGINE IS THE PRODUCTION DEFAULT, and it is selected HERE
+            # rather than in the code.
+            #
+            # The plan's wording is "prod: provider = temporal by default",
+            # which read literally means the registry's own default keys off
+            # `ANDYUR_PROFILE`. That is NOT what this does, and the reason is
+            # the premise of the whole seam: `ANDYUR_PROFILE` defaults to
+            # `prod`, so a code-level default of `temporal` would mean the
+            # PACKAGE refuses to run without a durable engine. An adopter who
+            # wants the native engine in production is exactly who the provider
+            # interface exists for, and making them opt OUT of a dependency
+            # they never chose would make "providers are configuration" false.
+            #
+            # So the production DEPLOYMENT selects the engine, in the manifest,
+            # where an operator can read it and change it. There is no fallback
+            # in either direction: if the engine is unreachable this control
+            # plane refuses work rather than quietly continuing on the local
+            # one, because work admitted as durable and continued by a
+            # single-node engine has lost the guarantee it was accepted on.
+            - {name: ANDYUR_WORKFLOW_PROVIDER, value: temporal}
+            # ARCHITECTURE B+ (ADR-014 D11): the engine DISPATCHES admitted runs
+            # to the execution worker; the native assignment loop does not
+            # hand them out. The package default stays native: this is the
+            # production deployment's choice, stated here.
+            - {name: ANDYUR_TEMPORAL_DISPATCH, value: engine}
+            - {name: ANDYUR_TEMPORAL_ADDRESS, value: "andyur-temporal.andyur-system.svc:7233"}
+            - {name: ANDYUR_TEMPORAL_NAMESPACE, value: andyur}
+            - {name: ANDYUR_TEMPORAL_TLS, value: "on"}
+            - {name: ANDYUR_TEMPORAL_CLIENT_CERT, value: /svid/tls.crt}
+            - {name: ANDYUR_TEMPORAL_CLIENT_KEY, value: /svid/tls.key}
+            - {name: ANDYUR_TEMPORAL_SERVER_CA, value: /svid/ca.crt}
+            # Set HERE, where it is read (server/auth.py:303), rather than left
+            # to the profile: every run-token call must also prove the matching
+            # per-run SPIFFE identity, and a property that important should not
+            # depend on a setting somebody may change for another reason.
+            - {name: ANDYUR_REQUIRE_RUN_SVID, value: "on"}
+            # THE USER AXIS. Ownership and admin are read from the user's token,
+            # so BOTH the issuer and the audience are required: without the
+            # audience a token the IdP minted for a different client in the same
+            # realm validates here and carries the same realm roles, and an
+            # unrelated token becomes admin (config.assert_user_auth).
+            #
+            # The issuer is the exact string tokens carry as `iss`, which is
+            # idp.yaml's KC_HOSTNAME. The two move together; if you front
+            # Keycloak with an ingress, change both.
+            - {name: ANDYUR_USER_AUTH, value: "on"}
+            - {name: ANDYUR_OIDC_ISSUER, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur"}
+            - {name: ANDYUR_OIDC_AUDIENCE, value: andyur}
+            # Named explicitly rather than discovered: the discovery document's
+            # jwks_uri is the issuer URL, which is right here but is NOT right
+            # behind an ingress -- the compose reference records the same trap.
+            - {name: ANDYUR_OIDC_JWKS, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur/protocol/openid-connect/certs"}
+            - {name: ANDYUR_ADMIN_ROLE, value: andyur-admin}
+            - {name: SPIFFE_ENDPOINT_SOCKET, value: "unix:///spiffe-workload-api/spire-agent.sock"}
+            # Kubernetes assignment requires a PINNED GOVERNED registry: the
+            # server verifies the snapshot's cosign signature and pulls it with
+            # oras (both in the server image). Render the digest from
+            # `andyur agents package --publish-ref`; the public key arrives as
+            # the andyur-registry-cosign Secret. The two offline toggles are
+            # for a registry without a transparency log / TLS (the local dev
+            # registry); a production registry serves TLS and a tlog.
+            - {name: ANDYUR_REGISTRY, value: governed}
+            - {name: ANDYUR_REGISTRY_REF, value: "registry.example/andyur-registry@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"}
+            - {name: ANDYUR_REGISTRY_COSIGN_KEY, value: /run/secrets/andyur-registry/cosign.pub}
+            - {name: ANDYUR_REGISTRY_COSIGN_IGNORE_TLOG, value: "off"}
+            - {name: ANDYUR_REGISTRY_ALLOW_HTTP, value: "off"}
+            - {name: HOME, value: /tmp}
+            - name: ANDYUR_RUN_TOKEN_SECRET
+              valueFrom: {secretKeyRef: {name: andyur-secrets, key: run-token-secret}}
+          ports:
+            - {name: http, containerPort: 8642}
+          readinessProbe:
+            httpGet: {path: /ready, port: http, scheme: HTTP}
+            periodSeconds: 2
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: registry-cosign, mountPath: /run/secrets/andyur-registry, readOnly: true}
+            - {name: data, mountPath: /var/lib/andyur}
+            - {name: tmp, mountPath: /tmp}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+            - {name: temporal-svid, mountPath: /svid, readOnly: true}
+        - name: broker-state-backend
+          image: registry.example/andyur-server@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          command: ["python", "-m", "andyur.server.brokerstate_server"]
+          env:
+            - {name: ANDYUR_PROFILE, value: prod}
+            # The user axis, on every container that asserts the prod profile:
+            # `assert_profile` requires it of whoever calls it, and the server,
+            # the daemon and the broker-state backend all do. One deployment,
+            # one identity configuration -- a container that satisfied the
+            # profile differently from its neighbours would be the interesting
+            # question nobody wants to answer at 3am.
+            - {name: ANDYUR_USER_AUTH, value: "on"}
+            - {name: ANDYUR_OIDC_ISSUER, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur"}
+            - {name: ANDYUR_OIDC_AUDIENCE, value: andyur}
+            - {name: ANDYUR_OIDC_JWKS, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur/protocol/openid-connect/certs"}
+            - {name: ANDYUR_ADMIN_ROLE, value: andyur-admin}
+            - {name: ANDYUR_OTEL, value: "on"}
+            - {name: ANDYUR_OTEL_ENDPOINT, value: "http://otel-collector.andyur-system.svc:4318"}
+            - {name: ANDYUR_DEPLOYMENT, value: kubernetes}
+            - {name: ANDYUR_SANDBOX, value: "on"}
+            - {name: ANDYUR_AGENT_AUTH, value: "on"}
+            - {name: ANDYUR_DELEGATIONS, value: "*"}
+            - {name: ANDYUR_DATA_DIR, value: /var/lib/andyur}
+            - {name: ANDYUR_TRUST_DOMAIN, value: andyur.local}
+            - {name: ANDYUR_SPIFFE_ID, value: "spiffe://andyur.local/control-plane"}
+            - {name: SPIFFE_ENDPOINT_SOCKET, value: "unix:///spiffe-workload-api/spire-agent.sock"}
+            - {name: ANDYUR_BROKER_STATE_SOCKET, value: /run/andyur-server-root/broker/state.sock}
+            - {name: ANDYUR_BROKER_PROVISION_PARENT, value: "on"}
+            - name: ANDYUR_RUN_TOKEN_SECRET
+              valueFrom: {secretKeyRef: {name: andyur-secrets, key: run-token-secret}}
+          # THE PROBE USED TO COST AS MUCH AS THE PROCESS IT PROBES, and this
+          # container was OOMKilled in a real cluster because of it. Measured
+          # in the shipped image: `brokerstate_server --check` imported the
+          # whole serving module -- 83 MiB resident, 0.54 s -- every 2 seconds,
+          # inside a 256 MiB budget the serving process already used half of.
+          # Under load it also exceeded its own timeout, so the kubelet killed
+          # a HEALTHY process for failing a liveness check that was slow only
+          # because of what the check itself cost.
+          #
+          # `brokerstate_check` speaks HTTP/1.0 to the socket with the standard
+          # library and imports no andyur at all. The limit is raised anyway:
+          # the old number was never tried against a running pod, and 256 MiB
+          # left the serving process no headroom for the request it exists to
+          # serve. The readiness period is 5 s (was 2) with the same 30 s
+          # failure window.
+          resources:
+            requests: {cpu: 50m, memory: 128Mi, ephemeral-storage: 64Mi}
+            limits: {cpu: 250m, memory: 512Mi, ephemeral-storage: 128Mi}
+          readinessProbe:
+            exec:
+              command: ["python", "-m", "andyur.server.brokerstate_check"]
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command: ["python", "-m", "andyur.server.brokerstate_check"]
+            periodSeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/andyur}
+            - {name: broker-state-backend, mountPath: /run/andyur-server-root}
+            - {name: broker-backend-tmp, mountPath: /tmp}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+        - name: broker-state-ingress
+          image: docker.io/envoyproxy/envoy@sha256:d59f7f5fa10cff6d5892b6c5e7df5c9297ddfb2c3683e33fbfb82da24de4fa66
+          args: ["-c", "/config/bootstrap.json", "--disable-hot-restart"]
+          ports: [{name: broker-state, containerPort: 9443}]
+          # A PROBE THAT COULD NEVER PASS. This read
+          # `httpGet: {host: 127.0.0.1, port: 9902}` -- Envoy's admin endpoint,
+          # which the bootstrap binds to loopback INSIDE the container, exactly
+          # as it should. But `host` on an httpGet probe is dialled from the
+          # NODE's network namespace, so the kubelet was connecting to the
+          # node's own 127.0.0.1:9902 and getting "connection refused" forever.
+          # The container ran correctly and was never Ready, so the pod was
+          # never Ready, so `kubectl wait` in every in-cluster gate timed out.
+          # Nothing caught it because no gate had ever waited on this pod: the
+          # broker sidecars were verified in Docker, not here.
+          #
+          # A TCP connect to the mTLS listener, which the kubelet CAN reach.
+          # Envoy warms an SDS-dependent listener before it starts accepting,
+          # so a successful connect also means the certificate arrived -- which
+          # is what this sidecar's readiness actually means. It does not prove a
+          # handshake succeeds; that is what the semantic-wire gate proves, and
+          # a probe should not be a second copy of a gate.
+          readinessProbe:
+            tcpSocket: {port: broker-state}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          resources:
+            requests: {cpu: 50m, memory: 128Mi, ephemeral-storage: 64Mi}
+            limits: {cpu: 250m, memory: 256Mi, ephemeral-storage: 128Mi}
+          securityContext:
+            runAsUser: 1337
+            runAsGroup: 1337
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: broker-envoy-config, mountPath: /config, readOnly: true}
+            - {name: broker-state-backend, mountPath: /run/andyur-server-root}
+            - {name: broker-ingress-tmp, mountPath: /tmp}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+        # ROTATION, for as long as the pod lives. The SVID's lifetime is
+        # fifteen minutes; without this the control plane would keep presenting
+        # an expired client certificate and the engine would start refusing it,
+        # which surfaces as the provider being unreachable rather than as a
+        # certificate problem.
+        - name: temporal-svid-rotate
+          image: ghcr.io/spiffe/spiffe-helper@sha256:1c92e5998ad3621e3323f25aabe40f5a88ba730ee0edb248aa8c943ca504e8a2
+          args: ["-config", "/conf/helper.conf"]
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: temporal-svid, mountPath: /svid}
+            - {name: temporal-spiffe-helper-conf, mountPath: /conf, readOnly: true}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+        # THE WORKFLOW WORKER: where workflows and activities actually execute.
+        #
+        # A SEPARATE PROCESS, AND THAT IS THE POINT -- a workflow worker inside
+        # the API process would take the API down whenever the engine had a bad
+        # minute, which is the opposite of what the seam is for. It is a
+        # separate CONTAINER rather than a separate Deployment for a reason
+        # that is about THIS deployment and not about the design: the
+        # activities read Andyur's database directly, and in this shape that
+        # database is SQLite on the server's own ReadWriteOnce volume. A second
+        # Pod could not mount it. On a Postgres deployment this becomes its own
+        # Deployment and nothing else changes.
+        #
+        # IT RUNS WHETHER OR NOT THE ENGINE IS SELECTED, and does nothing when
+        # it is not: with `local` bound, no workflow is ever scheduled onto this
+        # task queue, so the worker polls an empty queue. That is deliberate --
+        # a worker that had to be deployed at the same moment the provider was
+        # switched would make the switch two changes instead of one, and the
+        # window between them is a workflow with nothing to execute it.
+        - name: workflow-worker
+          image: registry.example/andyur-server@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "andyur.orchestration.temporal.worker"]
+          env:
+            - {name: ANDYUR_PROFILE, value: prod}
+            # THE SAME PROVIDER AS THE SERVER, stated here because it is not
+            # inherited. An activity that admits a run builds its own facade,
+            # and with this unset the registry defaulted to `local`: a
+            # scheduled run admitted by the engine would have been BOUND to
+            # the native engine, and the server would then have refused to let
+            # it join its own workflow.
+            - {name: ANDYUR_WORKFLOW_PROVIDER, value: temporal}
+            # ARCHITECTURE B+ (ADR-014 D11): the engine DISPATCHES admitted runs
+            # to the execution worker; the native assignment loop does not
+            # hand them out. The package default stays native: this is the
+            # production deployment's choice, stated here.
+            - {name: ANDYUR_TEMPORAL_DISPATCH, value: engine}
+            # HELD TO THE SAME BAR AS THE REST OF THE CONTROL PLANE, and not
+            # because a test said so. This container's activities call the
+            # coordinator and read Andyur's database -- it is a control-plane
+            # process wearing a different entrypoint. Its own startup path does
+            # not happen to call `assert_profile` today, and that is exactly the
+            # reason to configure it as though it did: a process that declares
+            # `prod` while missing what `prod` requires is one import away from
+            # refusing to start, and the failure would arrive on a deploy long
+            # after the choice that caused it.
+            - {name: ANDYUR_USER_AUTH, value: "on"}
+            - {name: ANDYUR_REQUIRE_RUN_SVID, value: "on"}
+            - {name: ANDYUR_OIDC_ISSUER, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur"}
+            - {name: ANDYUR_OIDC_AUDIENCE, value: "andyur"}
+            - {name: ANDYUR_OIDC_JWKS, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur/protocol/openid-connect/certs"}
+            - {name: ANDYUR_ADMIN_ROLE, value: "andyur-admin"}
+            - {name: ANDYUR_DATA_DIR, value: /var/lib/andyur}
+            - {name: ANDYUR_TRUST_DOMAIN, value: andyur.local}
+            - {name: ANDYUR_SPIFFE_ID, value: "spiffe://andyur.local/control-plane"}
+            - {name: SPIFFE_ENDPOINT_SOCKET, value: "unix:///spiffe-workload-api/spire-agent.sock"}
+            - {name: ANDYUR_OTEL, value: "on"}
+            - {name: ANDYUR_OTEL_ENDPOINT, value: "http://otel-collector.andyur-system.svc:4318"}
+            - {name: ANDYUR_TEMPORAL_ADDRESS, value: "andyur-temporal.andyur-system.svc:7233"}
+            - {name: ANDYUR_TEMPORAL_NAMESPACE, value: andyur}
+            - {name: ANDYUR_TEMPORAL_TLS, value: "on"}
+            - {name: ANDYUR_TEMPORAL_CLIENT_CERT, value: /svid/tls.crt}
+            - {name: ANDYUR_TEMPORAL_CLIENT_KEY, value: /svid/tls.key}
+            - {name: ANDYUR_TEMPORAL_SERVER_CA, value: /svid/ca.crt}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/andyur}
+            - {name: tmp, mountPath: /tmp}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+            - {name: temporal-svid, mountPath: /svid, readOnly: true}
+      volumes:
+        - name: registry-cosign
+          secret: {secretName: andyur-registry-cosign}
+        - {name: temporal-svid, emptyDir: {}}
+        # SHARED WITH THE ENGINE'S OWN POD, one source for one shape of file.
+        - name: temporal-spiffe-helper-conf
+          configMap: {name: andyur-temporal-spiffe-helper}
+        - {name: data, persistentVolumeClaim: {claimName: andyur-server-data}}
+        - {name: tmp, emptyDir: {}}
+        - {name: broker-envoy-config, emptyDir: {}}
+        - {name: broker-state-backend, emptyDir: {}}
+        - {name: broker-backend-tmp, emptyDir: {}}
+        - {name: broker-ingress-tmp, emptyDir: {}}
+        - name: spiffe-workload-api
+          csi: {driver: csi.spiffe.io, readOnly: true}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: andyur-worker
+  namespace: andyur-system
+spec:
+  serviceName: andyur-worker
+  replicas: 1
+  selector:
+    matchLabels:
+      app: andyur-worker
+  template:
+    metadata:
+      labels:
+        app: andyur-worker
+    spec:
+      serviceAccountName: andyur-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: worker
+          image: registry.example/andyur-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: ANDYUR_PROFILE, value: prod}
+            # The user axis, on every container that asserts the prod profile:
+            # `assert_profile` requires it of whoever calls it, and the server,
+            # the daemon and the broker-state backend all do. One deployment,
+            # one identity configuration -- a container that satisfied the
+            # profile differently from its neighbours would be the interesting
+            # question nobody wants to answer at 3am.
+            - {name: ANDYUR_USER_AUTH, value: "on"}
+            # THE DAEMON REFUSES prod WITHOUT THIS, and it was never here.
+            # `config.assert_profile()` is the first thing `daemon.run` does,
+            # and under prod it requires the same flags the server and the
+            # operator carry. The worker had two of the three, so the
+            # reference deployment's worker crash-looped on
+            #   ANDYUR_PROFILE=prod requires: ANDYUR_REQUIRE_RUN_SVID=on
+            # in a component nothing else reports on -- so the symptom an
+            # operator sees is a control plane that serves and never
+            # launches a run, which names nothing.
+            - {name: ANDYUR_REQUIRE_RUN_SVID, value: "on"}
+            - {name: ANDYUR_OIDC_ISSUER, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur"}
+            - {name: ANDYUR_OIDC_AUDIENCE, value: andyur}
+            - {name: ANDYUR_OIDC_JWKS, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur/protocol/openid-connect/certs"}
+            - {name: ANDYUR_ADMIN_ROLE, value: andyur-admin}
+            - {name: ANDYUR_OTEL, value: "on"}
+            - {name: ANDYUR_OTEL_ENDPOINT, value: "http://otel-collector.andyur-system.svc:4318"}
+            - {name: ANDYUR_DEPLOYMENT, value: kubernetes}
+            - {name: ANDYUR_SANDBOX, value: "on"}
+            - {name: ANDYUR_AGENT_AUTH, value: "on"}
+            - {name: ANDYUR_DELEGATIONS, value: "*"}
+            - {name: ANDYUR_SERVER_URL, value: "http://andyur-server.andyur-system.svc:8642"}
+            - {name: ANDYUR_KUBERNETES_NAMESPACE, value: andyur-runs}
+            - {name: ANDYUR_WORKER_ID, value: andyur-worker-0}
+            - {name: ANDYUR_LLM, value: ollama}
+            # Render the numeric ClusterIP of the andyur-ollama Service here so
+            # the untrusted Pod needs no DNS egress.
+            - {name: ANDYUR_OLLAMA_URL, value: "http://10.43.147.32:11434"}
+            - name: ANDYUR_KUBERNETES_AGENT_MODEL_EGRESS
+              value: >-
+                {"namespace":"andyur-system","labels":{"app":"andyur-ollama"},"port":11434}
+            - name: ANDYUR_KUBERNETES_PROXY_EGRESS
+              value: >-
+                [{"namespace":"andyur-system","labels":{"app":"andyur-server"},"port":8642},{"namespace":"andyur-system","labels":{"app":"andyur-ollama"},"port":11434},{"namespace":"andyur-system","labels":{"app":"otel-collector"},"port":4318}]
+            - name: ANDYUR_KUBERNETES_BROKER_ENVOY_IMAGE
+              value: docker.io/envoyproxy/envoy@sha256:d59f7f5fa10cff6d5892b6c5e7df5c9297ddfb2c3683e33fbfb82da24de4fa66
+            - {name: ANDYUR_KUBERNETES_BROKER_STATE_HOST, value: andyur-server.andyur-system.svc}
+            - {name: ANDYUR_KUBERNETES_BROKER_STATE_PORT, value: "9443"}
+            - name: ANDYUR_KUBERNETES_BROKER_STATE_PEER
+              value: >-
+                {"namespace":"andyur-system","labels":{"app":"andyur-server"},"port":9443}
+            - {name: ANDYUR_TRUST_DOMAIN, value: andyur.local}
+            - {name: ANDYUR_SPIFFE_ID, value: "spiffe://andyur.local/worker"}
+            - {name: SPIFFE_ENDPOINT_SOCKET, value: "unix:///spiffe-workload-api/spire-agent.sock"}
+            - name: ANDYUR_KUBERNETES_PROXY_IMAGE
+              value: registry.example/andyur-runner@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+            - name: ANDYUR_KUBERNETES_AGENT_IMAGE
+              value: registry.example/andyur-runner@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+            - name: ANDYUR_RUN_TOKEN_SECRET
+              valueFrom: {secretKeyRef: {name: andyur-secrets, key: run-token-secret}}
+            - name: LITELLM_MASTER_KEY
+              valueFrom: {secretKeyRef: {name: andyur-secrets, key: model-service-key}}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: data, mountPath: /app/data}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+        - {name: data, emptyDir: {}}
+        - name: spiffe-workload-api
+          csi: {driver: csi.spiffe.io, readOnly: true}
+---
+# THE ENGINE'S EXECUTION WORKER (Architecture B+, ADR-014 D11). Polls the
+# engine's execution queue for `execute_run(run_id)`, fetches the admitted run
+# from Andyur, and launches or ADOPTS it through the same governed Kubernetes
+# launcher the worker daemon uses. It does not assign work from the database
+# and does not register as a worker there: adding capacity is adding replicas.
+#
+# NO RUN-TOKEN SIGNING KEY. The daemon's container carries
+# ANDYUR_RUN_TOKEN_SECRET only because the production boot check asks every
+# prod process for it; nothing in the launch path uses it, and this worker
+# gets its run credentials from the server, per run, like the daemon does.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: andyur-temporal-execution-worker
+  namespace: andyur-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: andyur-temporal-execution-worker
+  template:
+    metadata:
+      labels:
+        app: andyur-temporal-execution-worker
+    spec:
+      serviceAccountName: andyur-temporal-execution-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        # The engine client's certificate BEFORE the worker starts: the
+        # rotating sidecar starts in parallel and would lose the race.
+        - name: temporal-svid-bootstrap
+          image: ghcr.io/spiffe/spiffe-helper@sha256:1c92e5998ad3621e3323f25aabe40f5a88ba730ee0edb248aa8c943ca504e8a2
+          args: ["-config", "/conf/helper.conf", "-daemon-mode=false"]
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: temporal-svid, mountPath: /svid}
+            - {name: temporal-spiffe-helper-conf, mountPath: /conf, readOnly: true}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+      containers:
+        - name: execution-worker
+          image: registry.example/andyur-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "andyur.orchestration.temporal.execution_worker"]
+          env:
+            - {name: ANDYUR_PROFILE, value: prod}
+            # The user axis, on every container that asserts the prod profile:
+            # `assert_profile` requires it of whoever calls it, and the server,
+            # the daemon and the broker-state backend all do. One deployment,
+            # one identity configuration -- a container that satisfied the
+            # profile differently from its neighbours would be the interesting
+            # question nobody wants to answer at 3am.
+            - {name: ANDYUR_USER_AUTH, value: "on"}
+            # THE DAEMON REFUSES prod WITHOUT THIS, and it was never here.
+            # `config.assert_profile()` is the first thing `daemon.run` does,
+            # and under prod it requires the same flags the server and the
+            # operator carry. The worker had two of the three, so the
+            # reference deployment's worker crash-looped on
+            #   ANDYUR_PROFILE=prod requires: ANDYUR_REQUIRE_RUN_SVID=on
+            # in a component nothing else reports on -- so the symptom an
+            # operator sees is a control plane that serves and never
+            # launches a run, which names nothing.
+            - {name: ANDYUR_REQUIRE_RUN_SVID, value: "on"}
+            - {name: ANDYUR_OIDC_ISSUER, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur"}
+            - {name: ANDYUR_OIDC_AUDIENCE, value: andyur}
+            - {name: ANDYUR_OIDC_JWKS, value: "http://andyur-keycloak.andyur-system.svc:8080/realms/andyur/protocol/openid-connect/certs"}
+            - {name: ANDYUR_ADMIN_ROLE, value: andyur-admin}
+            - {name: ANDYUR_OTEL, value: "on"}
+            - {name: ANDYUR_OTEL_ENDPOINT, value: "http://otel-collector.andyur-system.svc:4318"}
+            - {name: ANDYUR_DEPLOYMENT, value: kubernetes}
+            - {name: ANDYUR_SANDBOX, value: "on"}
+            - {name: ANDYUR_AGENT_AUTH, value: "on"}
+            - {name: ANDYUR_DELEGATIONS, value: "*"}
+            - {name: ANDYUR_SERVER_URL, value: "http://andyur-server.andyur-system.svc:8642"}
+            - {name: ANDYUR_KUBERNETES_NAMESPACE, value: andyur-runs}
+            - {name: ANDYUR_LLM, value: ollama}
+            # Render the numeric ClusterIP of the andyur-ollama Service here so
+            # the untrusted Pod needs no DNS egress.
+            - {name: ANDYUR_OLLAMA_URL, value: "http://10.43.147.32:11434"}
+            - name: ANDYUR_KUBERNETES_AGENT_MODEL_EGRESS
+              value: >-
+                {"namespace":"andyur-system","labels":{"app":"andyur-ollama"},"port":11434}
+            - name: ANDYUR_KUBERNETES_PROXY_EGRESS
+              value: >-
+                [{"namespace":"andyur-system","labels":{"app":"andyur-server"},"port":8642},{"namespace":"andyur-system","labels":{"app":"andyur-ollama"},"port":11434},{"namespace":"andyur-system","labels":{"app":"otel-collector"},"port":4318}]
+            - name: ANDYUR_KUBERNETES_BROKER_ENVOY_IMAGE
+              value: docker.io/envoyproxy/envoy@sha256:d59f7f5fa10cff6d5892b6c5e7df5c9297ddfb2c3683e33fbfb82da24de4fa66
+            - {name: ANDYUR_KUBERNETES_BROKER_STATE_HOST, value: andyur-server.andyur-system.svc}
+            - {name: ANDYUR_KUBERNETES_BROKER_STATE_PORT, value: "9443"}
+            - name: ANDYUR_KUBERNETES_BROKER_STATE_PEER
+              value: >-
+                {"namespace":"andyur-system","labels":{"app":"andyur-server"},"port":9443}
+            - {name: ANDYUR_TRUST_DOMAIN, value: andyur.local}
+            - {name: SPIFFE_ENDPOINT_SOCKET, value: "unix:///spiffe-workload-api/spire-agent.sock"}
+            - name: ANDYUR_KUBERNETES_PROXY_IMAGE
+              value: registry.example/andyur-runner@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+            - name: ANDYUR_KUBERNETES_AGENT_IMAGE
+              value: registry.example/andyur-runner@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+            - name: LITELLM_MASTER_KEY
+              valueFrom: {secretKeyRef: {name: andyur-secrets, key: model-service-key}}
+            - {name: ANDYUR_SPIFFE_ID, value: "spiffe://andyur.local/temporal-execution-worker"}
+            # THE ENGINE, as a client with its own SVID (files, rotated by the
+            # sidecar below), on the EXECUTION queue -- a different queue from
+            # the control plane's workflow worker, which holds no Kubernetes
+            # permissions and so must never be handed a launch.
+            - {name: ANDYUR_WORKFLOW_PROVIDER, value: temporal}
+            - {name: ANDYUR_TEMPORAL_ADDRESS, value: "andyur-temporal.andyur-system.svc:7233"}
+            - {name: ANDYUR_TEMPORAL_NAMESPACE, value: andyur}
+            - {name: ANDYUR_TEMPORAL_TLS, value: "on"}
+            - {name: ANDYUR_TEMPORAL_CLIENT_CERT, value: /svid/tls.crt}
+            - {name: ANDYUR_TEMPORAL_CLIENT_KEY, value: /svid/tls.key}
+            - {name: ANDYUR_TEMPORAL_SERVER_CA, value: /svid/ca.crt}
+            - {name: ANDYUR_TEMPORAL_DISPATCH, value: engine}
+            - {name: ANDYUR_TEMPORAL_EXECUTION_QUEUE, value: andyur-runs}
+            # Its OWN name in every log line, span and metric: it imports the
+            # daemon's launcher, and was otherwise reported as the daemon.
+            - {name: ANDYUR_SERVICE_NAME, value: andyur-execution-worker}
+            # PHYSICAL capacity: concurrent executions per replica. Policy
+            # (one live run per agent, workflow caps) stays Andyur's.
+            - {name: ANDYUR_EXECUTION_CONCURRENCY, value: "4"}
+
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: data, mountPath: /app/data}
+            - {name: temporal-svid, mountPath: /svid, readOnly: true}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+        - name: temporal-svid-rotate
+          image: ghcr.io/spiffe/spiffe-helper@sha256:1c92e5998ad3621e3323f25aabe40f5a88ba730ee0edb248aa8c943ca504e8a2
+          args: ["-config", "/conf/helper.conf"]
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: temporal-svid, mountPath: /svid}
+            - {name: temporal-spiffe-helper-conf, mountPath: /conf, readOnly: true}
+            - {name: spiffe-workload-api, mountPath: /spiffe-workload-api, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+        - {name: data, emptyDir: {}}
+        - {name: temporal-svid, emptyDir: {}}
+        - name: temporal-spiffe-helper-conf
+          configMap: {name: andyur-temporal-spiffe-helper}
+        - name: spiffe-workload-api
+          csi: {driver: csi.spiffe.io, readOnly: true}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: andyur-system
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ollama
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-ollama}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: andyur-runs}}
+          podSelector: {matchLabels: {app.kubernetes.io/component: proxy}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: andyur-runs}}
+          podSelector: {matchLabels: {app.kubernetes.io/component: agent}}
+      ports: [{protocol: TCP, port: 11434}]
+  egress:
+    # andyur:render=model-host -- where the model answers. NOT the registry,
+    # though on a single-machine reference deployment they are the same host.
+    - to: [{ipBlock: {cidr: 192.168.5.2/32}}]
+      ports: [{protocol: TCP, port: 11434}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: operator
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-operator}}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector: {matchLabels: {app: andyur-server}}
+      ports: [{protocol: TCP, port: 8642}]
+    - to:
+        - podSelector: {matchLabels: {app: otel-collector}}
+      ports: [{protocol: TCP, port: 4318}]
+    - to:
+        - podSelector: {matchLabels: {app: andyur-jaeger}}
+      ports: [{protocol: TCP, port: 16686}]
+    # THE OPERATOR MUST BE ABLE TO LOG IN. Under user-auth every owner-gated
+    # call carries a user token, and the operator surface is where a human (or
+    # a gate acting for one) obtains it. Without this rule the operator can
+    # reach the control plane and cannot authenticate to it, which is a
+    # deployment that looks configured and cannot be driven.
+    - to:
+        - podSelector: {matchLabels: {app: andyur-keycloak}}
+      ports: [{protocol: TCP, port: 8080}]
+    - to:
+        - podSelector: {matchLabels: {app: otel-collector}}
+      ports: [{protocol: TCP, port: 9464}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worker
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-worker}}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector: {matchLabels: {app: andyur-server}}
+      ports: [{protocol: TCP, port: 8642}]
+    - to:
+        - podSelector: {matchLabels: {app: otel-collector}}
+      ports: [{protocol: TCP, port: 4318}]
+    # Kubernetes NetworkPolicy cannot select a Service. Render these values to
+    # every address/port behind the kubernetes.default Endpoints object.
+    # andyur:render=kubernetes-api -- every address behind the
+    # kubernetes.default Endpoints object. A renderer DISCOVERS this from the
+    # cluster rather than asking: it is a fact about the cluster, and a
+    # deployer who gets it wrong has a worker that cannot reach the API server
+    # and a message about NetworkPolicy that names nothing they chose.
+    - to: [{ipBlock: {cidr: 192.168.64.2/32}}]
+      ports: [{protocol: TCP, port: 6443}]
+---
+# The execution worker's routes: the control plane (to fetch and claim a run
+# by id), the engine (to poll its queue), the collector, and the Kubernetes API
+# (to launch, adopt and delete run groups). Nothing else.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: temporal-execution-worker
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-temporal-execution-worker}}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector: {matchLabels: {app: andyur-server}}
+      ports: [{protocol: TCP, port: 8642}]
+    - to:
+        - podSelector: {matchLabels: {app: otel-collector}}
+      ports: [{protocol: TCP, port: 4318}]
+    - to:
+        - podSelector: {matchLabels: {app: andyur-temporal}}
+      ports: [{protocol: TCP, port: 7233}]
+    # Kubernetes NetworkPolicy cannot select a Service. Render these values to
+    # every address/port behind the kubernetes.default Endpoints object.
+    # andyur:render=kubernetes-api -- every address behind the
+    # kubernetes.default Endpoints object. A renderer DISCOVERS this from the
+    # cluster rather than asking: it is a fact about the cluster, and a
+    # deployer who gets it wrong has a worker that cannot reach the API server
+    # and a message about NetworkPolicy that names nothing they chose.
+    - to: [{ipBlock: {cidr: 192.168.64.2/32}}]
+      ports: [{protocol: TCP, port: 6443}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: server
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-server}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: andyur-worker}}
+        - podSelector: {matchLabels: {app: andyur-temporal-execution-worker}}
+        - podSelector: {matchLabels: {app: andyur-operator}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: andyur-runs}}
+          podSelector: {matchLabels: {app.kubernetes.io/component: proxy}}
+      ports: [{protocol: TCP, port: 8642}]
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: andyur-runs}}
+          podSelector: {matchLabels: {app.kubernetes.io/component: proxy}}
+      ports: [{protocol: TCP, port: 9443}]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector: {matchLabels: {app: otel-collector}}
+      ports: [{protocol: TCP, port: 4318}]
+    # THE WORKFLOW ENGINE. The `workflow-worker` container in this Pod dials
+    # it continuously, whichever provider is bound, so this grant is in use
+    # all the time -- an earlier comment said "nothing dials it" while `local`
+    # was bound, which was never true of this Pod.
+    #
+    # It is granted HERE and not on the `worker` policy. It used to be on both,
+    # and `app: andyur-worker` is the run-launching daemon, which never
+    # constructs a workflow provider: a route with no consumer, on the
+    # component the agent's runtime is nearest to.
+    - to:
+        - podSelector: {matchLabels: {app: andyur-temporal}}
+      ports: [{protocol: TCP, port: 7233}]
+    # The governed registry: render the OCI registry's address (an IP block,
+    # since NetworkPolicy cannot select by name). Rancher Desktop's local
+    # registry is the macOS host, 192.168.5.2:5000; a production registry is
+    # its own address and port 443.
+    # andyur:render=registry
+    - to:
+        - ipBlock: {cidr: 192.168.5.2/32}
+      ports: [{protocol: TCP, port: 5000}]
+    # The IdP's JWKS. Without this the server starts, accepts a login, and
+    # cannot fetch the keys to validate it -- so every user token is refused for
+    # a reason that names the wrong thing.
+    - to:
+        - podSelector: {matchLabels: {app: andyur-keycloak}}
+      ports: [{protocol: TCP, port: 8080}]
+    # THE KUBERNETES API, for the consequential action and nothing else.
+    #
+    # The rollback is the one thing the control plane DOES to a cluster: the
+    # agent asks, the server decides, and the SERVER performs it with its own
+    # ServiceAccount (rbac-consequential-action.yaml, opted into explicitly).
+    # Everything for that was in place -- the Role, the RoleBinding, the
+    # mounted token -- except a route: this policy had no egress to the API
+    # server, so an ALLOWED action failed with `Connection refused` to
+    # 10.43.0.1:443 while the audit row said the platform had authorised it.
+    #
+    # Found by an agent actually asking through the real path. The `action`
+    # lane drives the adapter in-process from the host, where there is no
+    # NetworkPolicy at all, so it could not have seen this.
+    #
+    # The rule names the ENDPOINT address and port (post-DNAT), like the
+    # worker's beside it: a NetworkPolicy cannot select a Service.
+    # andyur:render=kubernetes-api
+    - to: [{ipBlock: {cidr: 192.168.64.2/32}}]
+      ports: [{protocol: TCP, port: 6443}]
+---
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: andyur-server
+spec:
+  className: spire-system-andyur-spire
+  spiffeIDTemplate: spiffe://andyur.local/control-plane
+  namespaceSelector:
+    matchLabels: {kubernetes.io/metadata.name: andyur-system}
+  podSelector:
+    matchLabels: {app: andyur-server}
+  ttl: 15m
+---
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: andyur-worker
+spec:
+  className: spire-system-andyur-spire
+  spiffeIDTemplate: spiffe://andyur.local/worker
+  namespaceSelector:
+    matchLabels: {kubernetes.io/metadata.name: andyur-system}
+  podSelector:
+    matchLabels: {app: andyur-worker}
+  ttl: 15m
+---
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: andyur-temporal-execution-worker
+spec:
+  className: spire-system-andyur-spire
+  spiffeIDTemplate: spiffe://andyur.local/temporal-execution-worker
+  namespaceSelector:
+    matchLabels: {kubernetes.io/metadata.name: andyur-system}
+  podSelector:
+    matchLabels: {app: andyur-temporal-execution-worker}
+  ttl: 15m
+---
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: andyur-operator
+spec:
+  className: spire-system-andyur-spire
+  spiffeIDTemplate: spiffe://andyur.local/operator
+  namespaceSelector:
+    matchLabels: {kubernetes.io/metadata.name: andyur-system}
+  podSelector:
+    matchLabels: {app: andyur-operator}
+  ttl: 15m
+---
+# THE CONTAINMENT RECONCILER.
+#
+# The worker refuses to launch unless andyur-runs carries a NetworkPolicy
+# verification stamp under 600 seconds old. Nothing in a deployed cluster ever
+# renewed it -- only a developer running verify-network-policy.sh from a source
+# checkout -- so a partner got a control plane that came up and could never run
+# anything. This component re-PROVES containment on a timer and stamps only on
+# success; when a check fails it WITHDRAWS the stamp, so the worker stops
+# launching rather than continuing on a claim that is no longer true.
+#
+# It is a separate identity from the worker on purpose. Stamping the namespace
+# needs `patch` on it, and the worker deliberately has only `get`: a component
+# must not be able to write its own admission ticket. The worker still cannot;
+# this can, and this cannot launch a run.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: andyur-netpol-reconciler
+  namespace: andyur-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: andyur-netpol-reconciler
+rules:
+  # The stamp itself. Namespaces are cluster-scoped, so this is a ClusterRole --
+  # pinned by resourceNames to the ONE namespace it may stamp.
+  - apiGroups: [""]
+    resources: [namespaces]
+    resourceNames: [andyur-runs]
+    verbs: [get, patch]
+  # The two Services whose ClusterIPs the probe must reach (or be denied by):
+  # kubernetes.default and the collector. LIST cannot carry resourceNames, so
+  # these are GET only, by name.
+  - apiGroups: [""]
+    resources: [services]
+    resourceNames: [kubernetes, otel-collector]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: andyur-netpol-reconciler
+subjects:
+  - kind: ServiceAccount
+    name: andyur-netpol-reconciler
+    namespace: andyur-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: andyur-netpol-reconciler
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: andyur-netpol-reconciler
+  namespace: andyur-runs
+rules:
+  # The probe: two Pods and two NetworkPolicies, created and deleted every
+  # cycle. `deletecollection` is what makes the cleanup one call that cannot
+  # half-succeed, and pods/log is how the probe reports from inside isolation
+  # (there is deliberately no pods/exec here: nothing needs to reach INTO a
+  # probe Pod, and exec into the run namespace is authority this must not hold).
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [create, get, list, delete, deletecollection]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+  - apiGroups: ["networking.k8s.io"]
+    resources: [networkpolicies]
+    verbs: [create, get, list, delete, deletecollection]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: andyur-netpol-reconciler
+  namespace: andyur-runs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: andyur-netpol-reconciler
+subjects:
+  - kind: ServiceAccount
+    name: andyur-netpol-reconciler
+    namespace: andyur-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: andyur-netpol-reconciler
+  namespace: andyur-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: andyur-netpol-reconciler}
+  template:
+    metadata:
+      labels: {app: andyur-netpol-reconciler}
+    spec:
+      serviceAccountName: andyur-netpol-reconciler
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: reconciler
+          image: registry.example/andyur-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          command: ["python", "-m", "andyur.daemon.network_policy_reconciler"]
+          env:
+            - {name: ANDYUR_KUBERNETES_NAMESPACE, value: andyur-runs}
+            - {name: ANDYUR_KUBERNETES_SYSTEM_NAMESPACE, value: andyur-system}
+            # The probe runs the image this cluster ALREADY has, so a cycle
+            # never depends on a pull: a stamp that expires because a registry
+            # was slow is a run namespace that stops accepting work for a
+            # reason that has nothing to do with containment.
+            - {name: ANDYUR_PROBE_IMAGE, value: registry.example/andyur-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb}
+            # Comfortably inside the 600s the worker enforces, twice over: one
+            # missed cycle must not expire the stamp.
+            - {name: ANDYUR_NETPOL_INTERVAL, value: "240"}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 20m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netpol-reconciler
+  namespace: andyur-system
+spec:
+  podSelector: {matchLabels: {app: andyur-netpol-reconciler}}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    # DNS, which is also this component's own positive control: "the agent
+    # could not resolve" is evidence of isolation only if resolution works for
+    # something that is not isolated.
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    # andyur:render=kubernetes-api
+    - to: [{ipBlock: {cidr: 192.168.64.2/32}}]
+      ports: [{protocol: TCP, port: 6443}]

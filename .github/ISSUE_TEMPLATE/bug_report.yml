@@ -1,0 +1,65 @@
+name: Bug report
+description: Something behaves differently from what the documentation says
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Not for security issues.** If you believe something is exploitable, see
+        [SECURITY.md](../../blob/main/SECURITY.md) and email instead.
+
+        The most useful thing you can include is a reproduction. Most of the work
+        in a fix is establishing what is actually happening.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you observed, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The smallest sequence that shows it. Exact commands are ideal.
+      placeholder: |
+        ./run.sh docker-up
+        ./run.sh docker-cli agents create scout --description "..."
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment
+      description: >
+        `native` is development only and unsupported for production; saying so
+        helps rather than disqualifies the report.
+      options:
+        - docker
+        - kubernetes
+        - native (development)
+    validations:
+      required: true
+  - type: input
+    id: profile
+    attributes:
+      label: ANDYUR_PROFILE
+      placeholder: prod or dev
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and architecture, Python version, Docker version, and the commit or release you are on.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: >
+        Logs or errors. Re-run with `ANDYUR_DEBUG=1` for a traceback if the CLI
+        gave you a one-line message. Redact credentials — the platform redacts
+        its own logs, but paste carefully.
+      render: shell

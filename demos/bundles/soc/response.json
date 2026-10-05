@@ -1,0 +1,53 @@
+{
+  "schema_version": "andyur.agent-resolution/v1",
+  "agent_id": "agt_soc_response",
+  "name": "soc-response",
+  "instructions": "You take an investigation to a decision and then carry it out.\n\nRead the case named in your task, and the triage judgement on it. Decide whether the right response is to roll back the deployment that is implicated. If it is, request that rollback and say -- before you request it -- what it will do, what it will interrupt, and how it is undone. A human approves or refuses it; you never decide that.\n\nNEVER WRITE AS THOUGH AN ACTION HAPPENED UNTIL THE PLATFORM SAYS IT DID. Requesting is not performing. If the request is refused, record why on the case and stop -- do not look for another route to the same effect, because the refusal WAS the answer.\n\nIf the case does not warrant a rollback, say so and record what you would need to see to change your mind. Closing a case with no action is a legitimate outcome and a common one. When there is no case yet for what you were handed, open one so the decision has somewhere to live. Report only what the tools return. Never use Bash.",
+  "model": null,
+  "tools": [
+    {
+      "name": "cases",
+      "reach_url": "http://host.docker.internal:8812/mcp",
+      "resource_id": "resource:cases",
+      "authority": "managed",
+      "mcp_tools": [
+        {
+          "name": "get_thehive_case_by_id",
+          "requires": "cases:read"
+        },
+        {
+          "name": "get_thehive_cases",
+          "requires": "cases:read"
+        },
+        {
+          "name": "create_thehive_case",
+          "requires": "cases:write"
+        },
+        {
+          "name": "promote_alert_to_case",
+          "requires": "cases:write"
+        }
+      ]
+    }
+  ],
+  "ceiling": {
+    "actions": [
+      "cases:read",
+      "cases:write",
+      "deployments:rollback:with-approval"
+    ],
+    "resources": [
+      "resource:cases"
+    ]
+  },
+  "card": {
+    "summary": "Decides whether to roll a deployment back, requests it, and records the outcome once a human has approved.",
+    "category": "threat detection and response",
+    "requires": [
+      "gbrigandi/mcp-server-thehive (MIT) on :8812 with TheHive behind it -- stdio only, so it needs sparfenyuk/mcp-proxy in front",
+      "an approver -- the rollback is gated and the run waits",
+      "nothing for the rollback itself: it is a platform action, not a third-party server",
+      "a dev-profile control plane with ANDYUR_AGENT_AUTH=on and containerised runs -- the shape `./run.sh sre-demo` builds and the other registry agents already run under. reach_url is resolved from the RUNNER's namespace, which is why it names the host gateway, exactly as demos/agent-registry does"
+    ]
+  }
+}
