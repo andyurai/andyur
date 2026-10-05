@@ -116,3 +116,26 @@ def test_the_release_key_the_docs_name_is_the_key_in_the_tree():
         assert printed == {digest}, (
             f"{doc} prints a 64-hex digest that is not the release key's: "
             f"{printed - {digest}}")
+
+
+def test_the_version_being_packaged_is_a_release_the_docs_admit_to():
+    """The first public tree was tagged-ready in every respect but its own
+    words: the changelog filed 0.1.0 under "Unreleased", and three documents
+    said no version had been tagged. A package whose changelog does not list
+    its own version tells a reader they are holding something unfinished."""
+    import tomllib
+
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+    changelog = (ROOT / "CHANGELOG.md").read_text()
+    assert re.search(rf"^## \[{re.escape(version)}\] - \d{{4}}-\d{{2}}-\d{{2}}$",
+                     changelog, re.M), (
+        f"CHANGELOG.md has no dated section for {version}, the version "
+        "pyproject.toml packages")
+    for doc in ("SECURITY.md", "CONTRIBUTING.md", "docs/RELEASING.md"):
+        body = (ROOT / doc).read_text().lower()
+        for stale in ("pre-release", "no versions have been tagged",
+                      "until the first tagged release", "until the first public release"):
+            assert stale not in body, f"{doc} still says {stale!r}"
+    minor = ".".join(version.split(".")[:2])
+    assert f"| {minor}.x" in (ROOT / "SECURITY.md").read_text(), (
+        f"SECURITY.md's supported-versions table does not name {minor}.x")

@@ -11,8 +11,14 @@ change lives in its commit message and, where it was a decision, in an ADR under
 
 ## [Unreleased]
 
-First public release in preparation. See [`ROADMAP.md`](ROADMAP.md) for what is
-built, what the known limits are, and what is next.
+Nothing yet.
+
+## [0.1.0] - 2026-10-05
+
+The first public release. See [`ROADMAP.md`](ROADMAP.md) for what is built, what
+the known limits are, and what is next. The entries below are relative to the
+private development tree, so "changed" and "fixed" describe how this release
+differs from what its early users ran, not from an earlier public version.
 
 ### Added
 - `ROADMAP.md`: what is built and verified, the known limits as a table, what is

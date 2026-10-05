@@ -20,9 +20,14 @@ notes unless you ask otherwise.
 
 ## Supported versions
 
-Andyur is pre-release. Only the current main branch receives security fixes.
-A supported-versions table will replace this section at the first tagged
-release.
+| Version | Security fixes |
+|---|---|
+| 0.1.x, the latest minor release | yes |
+| anything older | best effort |
+| `main` between releases | yes, and a fix lands there first |
+
+Andyur is 0.x: a minor release may break compatibility, and its changelog entry
+says so when it does. `docs/RELEASING.md` is the source for this policy.
 
 ## Verifying a release
 

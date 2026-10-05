@@ -1,15 +1,14 @@
 # Releasing Andyur
 
-Status: pre-release. No versions have been tagged yet; this document defines
-the process the first tag will follow, so it exists before it is needed.
+Status: 0.1.0 is the first tagged release. This document defines the process a
+release follows.
 
 ## Support policy
 
-Until the first tagged release, only the current `main` receives fixes,
-including security fixes (see SECURITY.md). From the first tag onward: the
-latest minor release receives security and correctness fixes; anything older
-is best-effort. This section is the single source for the support statement;
-SECURITY.md links here conceptually and must not contradict it.
+The latest minor release receives security and correctness fixes; anything
+older is best-effort. Between releases a fix lands on `main` first. This
+section is the single source for the support statement; SECURITY.md restates
+it as a table and must not contradict it.
 
 ## What a release is
 

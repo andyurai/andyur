@@ -1,7 +1,8 @@
 # Contributing to Andyur
 
-Andyur is in pre-release. Until the first public release the process below is
-provisional, but it is the bar the codebase is already held to.
+Andyur is 0.x and has one maintainer. The process below is the bar the codebase
+is held to, and it applies to a contribution the same way it applies to the
+maintainer's own changes.
 
 ## Development setup
 
